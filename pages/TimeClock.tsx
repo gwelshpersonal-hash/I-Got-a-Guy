@@ -6,6 +6,7 @@ import { Shift, ShiftStatus, Role } from '../types';
 import { format, isToday, isPast, isSameDay } from 'date-fns';
 import { MapPin, CheckCircle2, MessageSquare, Clock, AlertCircle, ChevronRight, Star, Calendar, Image as ImageIcon, Camera, X, MessageCircle, Send, ShieldCheck, Lock, Navigation } from 'lucide-react';
 import { getCurrentPosition } from '../utils/geo';
+import { CATEGORY_RISK_MAPPING, RISK_LEVELS } from '../constants';
 
 export const TimeClock = () => {
   const { currentUser } = useAuth();
@@ -170,7 +171,16 @@ export const TimeClock = () => {
           };
       } catch (error) {
           console.warn("Could not retrieve GPS location during completion", error);
-          // We proceed without blocking, but ideally we'd log this refusal
+          
+          // GUARDRAIL: Block completion if GPS is missing for High Risk or High Value jobs
+          const riskMapping = CATEGORY_RISK_MAPPING[selectedJob.category];
+          const isHighRisk = riskMapping && riskMapping.risk === RISK_LEVELS.HIGH;
+          
+          if (selectedJob.hasHighValueItems || isHighRisk) {
+              alert("GPS Verification Failed: For high-risk or high-value jobs, we must verify your location at the time of completion. Please enable GPS and try again.");
+              setIsSubmitting(false);
+              return;
+          }
       }
 
       // Simulate network delay
