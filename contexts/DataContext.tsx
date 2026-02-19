@@ -71,15 +71,17 @@ const STORAGE_KEY_LEGAL = 'iw_legal_docs';
 const STORAGE_KEY_FAQS = 'iw_faqs';
 
 // Default Platform Config
-// Updated to 15% Platform Fee Standard
+// Updated to 15% Platform Fee Standard + 2026 Tiered Fees
 const DEFAULT_PLATFORM_CONFIG: PlatformConfig = ALL_SERVICE_CATEGORIES.reduce((acc, cat) => {
-    // Determine fee based on risk mapping
+    // Determine fee based on corrected risk mapping
     const mapping = CATEGORY_RISK_MAPPING[cat];
     const riskLevel = mapping ? mapping.risk : RISK_LEVELS.LOW;
-    const insuranceFee = INSURANCE_FEES[riskLevel] || 2.00;
+    
+    // RESTORED: Now uses the $3, $5, or $12 values from constants.ts
+    const insuranceFee = INSURANCE_FEES[riskLevel] || 3.00;
 
     acc[cat] = { 
-        platformFeePercent: 15, // Updated to 15%
+        platformFeePercent: 15, 
         insuranceRule: { type: 'FLAT', value: insuranceFee },
         requiresInsurance: false 
     };

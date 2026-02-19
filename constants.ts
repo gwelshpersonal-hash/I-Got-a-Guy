@@ -33,9 +33,9 @@ export const RISK_LEVELS = {
 } as const;
 
 export const INSURANCE_FEES = {
-  [RISK_LEVELS.LOW]: 2.00,
+  [RISK_LEVELS.LOW]: 3.00,
   [RISK_LEVELS.MEDIUM]: 5.00,
-  [RISK_LEVELS.HIGH]: 10.00
+  [RISK_LEVELS.HIGH]: 12.00
 };
 
 export const CATEGORY_RISK_MAPPING: Record<ServiceCategory, { risk: keyof typeof RISK_LEVELS }> = {

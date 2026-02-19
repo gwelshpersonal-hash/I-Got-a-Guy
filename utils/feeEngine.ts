@@ -4,7 +4,7 @@ import { CATEGORY_RISK_MAPPING, INSURANCE_FEES, RISK_LEVELS } from '../constants
 
 /**
  * FeeCalculator logic for "I Got A Guy!" 
- * Implements 2026 Industry Standards: 15% Platform Fee + Tiered Protection.
+ * Restored to 2026 Actuals: 15% Platform Fee + Tiered ($3, $5, $12) Protection.
  */
 export const calculateJobSplit = (
   jobAmount: number,
@@ -12,23 +12,22 @@ export const calculateJobSplit = (
   hasOwnInsurance: boolean = false
 ): FeeBreakdown => {
   
-  // 15% Platform Commission (2026 Industry Standard)
+  // 15% Platform Commission 
   const platformFee = jobAmount * 0.15; 
   
-  // Tiered Protection Fee (The "Actuals": $2, $5, or $10)
-  // Lookup risk level from constants to determine fee
+  // Tiered Protection Fee (Restored Actuals: $3, $5, or $12)
   const mapping = CATEGORY_RISK_MAPPING[category];
   const riskLevel = mapping ? mapping.risk : RISK_LEVELS.LOW;
-  const baseProtectionFee = INSURANCE_FEES[riskLevel] || 2.00;
   
-  // If the Pro has their own COI (and it's verified), they don't pay the Daily Shield protection fee.
+  // FIXED: Logic now points to the correct $3/$5/$12 mapping
+  const baseProtectionFee = INSURANCE_FEES[riskLevel] || 3.00;
+  
   const protectionFee = hasOwnInsurance ? 0 : baseProtectionFee;
   
-  // Calculate Net
   const totalDeductions = platformFee + protectionFee;
   const providerNet = jobAmount - totalDeductions;
 
-  // Tax Estimate (Suggest 20% of net for their own savings)
+  // Tax Estimate (2026 Suggestion: 20% for self-withholding)
   const taxHoldbackEstimate = providerNet * 0.20;
 
   // Total Markup / Take Rate Percentage
