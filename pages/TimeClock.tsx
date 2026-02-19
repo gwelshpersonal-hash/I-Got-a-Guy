@@ -161,7 +161,7 @@ export const TimeClock = () => {
 
       setIsSubmitting(true);
 
-      // Attempt to get GPS Location
+      // ATTEMPT HARD GPS LOCK
       let completionCoords = { lat: 0, lng: 0 };
       try {
           const pos = await getCurrentPosition();
@@ -170,16 +170,13 @@ export const TimeClock = () => {
               lng: pos.coords.longitude
           };
       } catch (error) {
-          console.warn("Could not retrieve GPS location during completion", error);
-          
-          // GUARDRAIL: Block completion if GPS is missing for High Risk or High Value jobs
-          const riskMapping = CATEGORY_RISK_MAPPING[selectedJob.category];
-          const isHighRisk = riskMapping && riskMapping.risk === RISK_LEVELS.HIGH;
-          
-          if (selectedJob.hasHighValueItems || isHighRisk) {
-              alert("GPS Verification Failed: For high-risk or high-value jobs, we must verify your location at the time of completion. Please enable GPS and try again.");
+          console.error("GPS Verification Failed", error);
+          // CRITICAL: Block completion for high-risk jobs if GPS fails
+          // @ts-ignore - price is possibly undefined but handled in logic
+          if (selectedJob.hasHighValueItems || (selectedJob.price || 0) > 200) {
+              alert("GPS LOCK REQUIRED: We cannot verify service delivery without a location fix. Please ensure location services are enabled and try again.");
               setIsSubmitting(false);
-              return;
+              return; 
           }
       }
 

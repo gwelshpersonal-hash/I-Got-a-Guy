@@ -1111,7 +1111,7 @@ export const Dashboard = () => {
                       <h2 className="text-xl font-bold text-navy-900 flex items-center"><Zap className="w-5 h-5 mr-2 text-gold-500" fill="currentColor" /> Available Gigs</h2>
                       {currentUser && <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-soft hover:shadow-md transition-all cursor-pointer"><label className="flex items-center cursor-pointer"><div className="relative"><input type="checkbox" className="sr-only" checked={currentUser.urgentAlertsEnabled} onChange={toggleUrgentAlerts} /><div className={`block w-9 h-5 rounded-full transition-colors ${currentUser.urgentAlertsEnabled ? 'bg-red-500' : 'bg-slate-300'}`}></div><div className={`dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform ${currentUser.urgentAlertsEnabled ? 'transform translate-x-4' : ''}`}></div></div><span className="ml-3 text-xs font-bold text-navy-900 uppercase tracking-wide">Emergency Texts</span></label></div>}
                   </div>
-                  {!isVerifiedInsured && <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm"><div className="flex items-start"><ShieldCheck className="w-6 h-6 text-blue-600 mr-3 shrink-0" /><div><h3 className="text-sm font-bold text-blue-800">Verify to unlock all jobs</h3><p className="text-xs text-blue-700 mt-1">Some high-risk categories are hidden until your insurance is verified.</p><button onClick={() => navigate('/profile')} className="mt-2 text-xs font-bold bg-white text-blue-600 px-3 py-1 rounded border border-blue-200 shadow-sm hover:bg-blue-50">Update Insurance</button></div></div></div>}
+                  {!isVerifiedInsured && <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm"><div className="flex items-start"><ShieldCheck className="w-6 h-6 text-blue-600 mr-3 shrink-0" /><div><h3 className="text-sm font-bold text-blue-800">Verify to unlock all jobs</h3><p className="text-xs text-blue-700 mt-1">Some high-risk categories are locked until your insurance is verified.</p><button onClick={() => navigate('/profile')} className="mt-2 text-xs font-bold bg-white text-blue-600 px-3 py-1 rounded border border-blue-200 shadow-sm hover:bg-blue-50">Update Insurance</button></div></div></div>}
                   <div className="flex flex-wrap items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                         <div className="flex items-center gap-2"><Filter className="w-4 h-4 text-slate-400" /><span className="text-xs font-bold text-slate-500 uppercase">Filters:</span></div>
                         <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as ServiceCategory | 'ALL')} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-navy-900 outline-none focus:ring-2 focus:ring-gold-400"><option value="ALL">All Categories</option>{ALL_SERVICE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select>
@@ -1126,16 +1126,18 @@ export const Dashboard = () => {
                       <div className="space-y-4">
                           {sortedAvailableGigs.eligible.map(gig => renderGigCard(gig))}
                           {sortedAvailableGigs.ineligible.length > 0 && (
-                              <>
-                                <div className="flex items-center gap-4 my-6">
-                                    <div className="h-px bg-slate-200 flex-1"></div>
-                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center">
+                              <div className="mt-8 animate-in fade-in slide-in-from-bottom-4">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-px bg-red-200 flex-1"></div>
+                                    <span className="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center bg-red-50 px-3 py-1 rounded-full border border-red-100 shadow-sm">
                                         <Lock className="w-3 h-3 mr-2" /> Requirements Not Met
                                     </span>
-                                    <div className="h-px bg-slate-200 flex-1"></div>
+                                    <div className="h-px bg-red-200 flex-1"></div>
                                 </div>
-                                {sortedAvailableGigs.ineligible.map(gig => renderGigCard(gig))}
-                              </>
+                                <div className="opacity-75 hover:opacity-100 transition-opacity duration-300">
+                                    {sortedAvailableGigs.ineligible.map(gig => renderGigCard(gig))}
+                                </div>
+                              </div>
                           )}
                       </div>
                   )}

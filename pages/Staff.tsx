@@ -392,26 +392,26 @@ export const Staff = () => {
 
                     {/* Pending Skills Section (Only if requests exist) */}
                     {formData.pendingSkills && formData.pendingSkills.length > 0 && (
-                        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mb-4">
                             <div className="flex items-center gap-2 mb-3">
                                 <AlertCircle className="w-4 h-4 text-amber-600" />
                                 <label className="block text-sm font-bold text-amber-900">Skill Requests</label>
                             </div>
                             <div className="space-y-2">
                                 {formData.pendingSkills.map(skill => (
-                                    <div key={skill} className="flex justify-between items-center bg-white p-2 rounded-lg border border-amber-100">
-                                        <span className="text-xs font-bold text-navy-900">{skill}</span>
+                                    <div key={skill} className="flex justify-between items-center bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
+                                        <span className="text-sm font-bold text-navy-900">{skill}</span>
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={() => handlePendingSkillAction(skill, 'APPROVE')}
-                                                className="p-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200 font-bold text-xs"
+                                                className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold text-xs transition-colors"
                                                 title="Approve Skill"
                                             >
                                                 Approve
                                             </button>
                                             <button 
                                                 onClick={() => handlePendingSkillAction(skill, 'REJECT')}
-                                                className="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 font-bold text-xs"
+                                                className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-bold text-xs transition-colors"
                                                 title="Reject Skill"
                                             >
                                                 Reject

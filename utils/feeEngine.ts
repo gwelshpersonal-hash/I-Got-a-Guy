@@ -4,7 +4,7 @@ import { CATEGORY_RISK_MAPPING, INSURANCE_FEES, RISK_LEVELS } from '../constants
 
 /**
  * FeeCalculator logic for "I Got A Guy!" 
- * Restored to 2026 Actuals: 15% Platform Fee + Tiered ($3, $5, $12) Protection.
+ * Restored Actuals: 15% Platform Fee + Tiered ($3, $5, $12) Protection.
  */
 export const calculateJobSplit = (
   jobAmount: number,
@@ -18,9 +18,7 @@ export const calculateJobSplit = (
   // Tiered Protection Fee (Restored Actuals: $3, $5, or $12)
   const mapping = CATEGORY_RISK_MAPPING[category];
   const riskLevel = mapping ? mapping.risk : RISK_LEVELS.LOW;
-  
-  // FIXED: Logic now points to the correct $3/$5/$12 mapping
-  const baseProtectionFee = INSURANCE_FEES[riskLevel] || 3.00;
+  const baseProtectionFee = INSURANCE_FEES[riskLevel] || 3.00; // Updated fallback to 3.00
   
   const protectionFee = hasOwnInsurance ? 0 : baseProtectionFee;
   
