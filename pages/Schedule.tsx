@@ -1,0 +1,332 @@
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../contexts/DataContext';
+import { Shift, ShiftStatus, Role } from '../types';
+import { format, isSameDay, addDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, X, Star, Loader2 } from 'lucide-react';
+
+export const Schedule = () => {
+    const { currentUser } = useAuth();
+    const { shifts, updateShift, sites, verifyJob } = useData();
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+
+    // Client Dispute & Verification State
+    const [isDisputing, setIsDisputing] = useState(false);
+    const [disputeReason, setDisputeReason] = useState('');
+    
+    // Verification Form State
+    const [verificationRating, setVerificationRating] = useState(5);
+    const [verificationFeedback, setVerificationFeedback] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+
+    const isClient = currentUser?.role === Role.CLIENT;
+    const isAdmin = currentUser?.role === Role.ADMIN;
+    const isProvider = currentUser?.role === Role.PROVIDER;
+
+    const filteredShifts = shifts.filter(s => {
+        if (isAdmin) return true;
+        if (isClient) return s.clientId === currentUser?.id;
+        if (isProvider) return s.userId === currentUser?.id;
+        return false;
+    });
+
+    const shiftsOnDate = filteredShifts.filter(s => isSameDay(s.start, selectedDate));
+
+    // Calendar Generation
+    const weekStart = startOfWeek(selectedDate);
+    const weekEnd = endOfWeek(selectedDate);
+    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+    const handleOpenShift = (shift: Shift) => {
+        setSelectedShift(shift);
+        setIsDisputing(false);
+        setDisputeReason('');
+        setVerificationRating(5);
+        setVerificationFeedback('');
+        setIsVerifying(false);
+    };
+
+    const handleVerifyCompletion = async () => {
+        if (!selectedShift) return;
+        
+        setIsVerifying(true);
+        try {
+            await verifyJob(selectedShift.id, {
+                rating: verificationRating,
+                feedback: verificationFeedback
+            });
+            alert("Success! Funds released to provider.");
+            setSelectedShift(null);
+        } catch (error: any) {
+            alert(`Verification Failed: ${error.message}`);
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handleSubmitDispute = () => {
+        if (!selectedShift || !disputeReason) return;
+        updateShift({
+            ...selectedShift,
+            isDisputed: true,
+            escrowStatus: 'DISPUTED',
+            disputeReason: disputeReason
+        });
+        alert("Dispute filed. Admin will review.");
+        setSelectedShift(null);
+    };
+
+    return (
+        <div className="space-y-6 animate-in fade-in">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-bold text-navy-950">Schedule</h1>
+                    <p className="text-slate-500">Manage your upcoming and past jobs.</p>
+                </div>
+                <div className="flex bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+                    <button onClick={() => setSelectedDate(addDays(selectedDate, -7))} className="p-2 hover:bg-slate-50 rounded-lg"><ChevronLeft className="w-5 h-5 text-slate-400" /></button>
+                    <div className="px-4 py-2 font-bold text-navy-900 flex items-center">
+                        <Calendar className="w-4 h-4 mr-2 text-gold-500" />
+                        {format(selectedDate, 'MMMM yyyy')}
+                    </div>
+                    <button onClick={() => setSelectedDate(addDays(selectedDate, 7))} className="p-2 hover:bg-slate-50 rounded-lg"><ChevronRight className="w-5 h-5 text-slate-400" /></button>
+                </div>
+            </div>
+
+            {/* Week View */}
+            <div className="grid grid-cols-7 gap-2 md:gap-4">
+                {weekDays.map(day => {
+                    const isSelected = isSameDay(day, selectedDate);
+                    const hasShift = filteredShifts.some(s => isSameDay(s.start, day));
+                    return (
+                        <button 
+                            key={day.toISOString()}
+                            onClick={() => setSelectedDate(day)}
+                            className={`p-3 rounded-xl flex flex-col items-center justify-center transition-all ${
+                                isSelected 
+                                ? 'bg-navy-900 text-white shadow-lg shadow-navy-200' 
+                                : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-100'
+                            }`}
+                        >
+                            <span className="text-xs font-bold uppercase">{format(day, 'EEE')}</span>
+                            <span className={`text-lg font-black mt-1 ${isSelected ? 'text-gold-400' : 'text-slate-700'}`}>{format(day, 'd')}</span>
+                            {hasShift && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1"></div>}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Shift List */}
+            <div className="space-y-4">
+                <h2 className="font-bold text-navy-900 text-lg flex items-center">
+                    {format(selectedDate, 'EEEE, MMM do')}
+                </h2>
+                {shiftsOnDate.length === 0 ? (
+                    <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400">
+                        <Calendar className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p>No jobs scheduled for this day.</p>
+                    </div>
+                ) : (
+                    shiftsOnDate.map(shift => {
+                        const site = sites.find(s => s.id === shift.siteId);
+                        const isCompleted = shift.status === ShiftStatus.COMPLETED;
+                        const isVerified = shift.status === ShiftStatus.VERIFIED;
+                        
+                        // Dynamic Styles for Completed Jobs
+                        const cardClasses = isCompleted 
+                            ? "bg-emerald-50/60 p-5 rounded-2xl shadow-md border-2 border-emerald-400 hover:shadow-lg transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden" 
+                            : isVerified 
+                                ? "bg-slate-50 p-5 rounded-2xl shadow-sm border border-slate-200 opacity-80 hover:opacity-100 transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                                : "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4";
+
+                        return (
+                            <div 
+                                key={shift.id} 
+                                onClick={() => handleOpenShift(shift)}
+                                className={cardClasses}
+                            >
+                                {isCompleted && (
+                                    <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center z-10">
+                                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                                        ACTION REQUIRED
+                                    </div>
+                                )}
+                                
+                                <div className="flex items-start gap-4">
+                                    <div className={`p-3 rounded-xl font-bold text-center min-w-[70px] ${isCompleted ? 'bg-white text-emerald-600 shadow-sm' : 'bg-slate-50 text-slate-500'}`}>
+                                        <div className="text-xs uppercase">{format(shift.start, 'MMM')}</div>
+                                        <div className="text-xl text-navy-900">{format(shift.start, 'd')}</div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-navy-900 text-lg">{shift.description}</h3>
+                                        <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
+                                            <span className="flex items-center"><Clock className="w-4 h-4 mr-1" /> {format(shift.start, 'h:mm a')} - {format(shift.end, 'h:mm a')}</span>
+                                            <span className="flex items-center"><MapPin className="w-4 h-4 mr-1" /> {site?.name}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-2 mt-2 md:mt-0">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                                        shift.status === ShiftStatus.COMPLETED ? 'bg-emerald-100 text-emerald-700' :
+                                        shift.status === ShiftStatus.VERIFIED ? 'bg-slate-200 text-slate-600' :
+                                        shift.status === ShiftStatus.ACCEPTED ? 'bg-blue-100 text-blue-700' :
+                                        'bg-slate-100 text-slate-500'
+                                    }`}>
+                                        {shift.status.replace('_', ' ')}
+                                    </span>
+                                    {shift.price && <span className="font-black text-navy-900">${shift.price}</span>}
+                                    {isCompleted && isClient && <span className="text-xs font-bold text-emerald-600 animate-pulse">Verify Now &rarr;</span>}
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* Detail Modal */}
+            {selectedShift && (
+                <div className="fixed inset-0 bg-navy-950/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-start mb-6">
+                            <h2 className="text-2xl font-bold text-navy-900">Job Details</h2>
+                            <button onClick={() => setSelectedShift(null)} className="text-slate-400 hover:text-navy-900">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <p className="text-sm text-slate-500 uppercase font-bold mb-1">Description</p>
+                                <p className="font-medium text-navy-900">{selectedShift.description}</p>
+                            </div>
+
+                            {/* Client Verification Flow */}
+                            {isClient && selectedShift.status === ShiftStatus.COMPLETED && !selectedShift.isDisputed && (
+                                <div className="bg-white border-2 border-emerald-400 rounded-xl p-6 shadow-md relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-emerald-400"></div>
+                                    <h3 className="font-bold text-lg text-navy-900 mb-2 flex items-center">
+                                        <CheckCircle2 className="w-5 h-5 mr-2 text-emerald-500" /> Verify Completion
+                                    </h3>
+                                    <p className="text-slate-500 text-sm mb-4">
+                                        The provider has marked this job as complete. Please review the proof of work and release funds.
+                                    </p>
+
+                                    {selectedShift.completionPhotos && (
+                                        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+                                            {selectedShift.completionPhotos.map((img, i) => (
+                                                <img key={i} src={img} className="w-24 h-24 rounded-lg object-cover border border-slate-200 shadow-sm" alt="Proof" />
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {selectedShift.providerFeedback && (
+                                        <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-700 italic mb-4 border border-slate-100">
+                                            " {selectedShift.providerFeedback} "
+                                        </div>
+                                    )}
+
+                                    {!isDisputing ? (
+                                        <>
+                                            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 mb-4 animate-in fade-in">
+                                                <h4 className="text-xs font-bold text-emerald-800 uppercase mb-2">Rate Provider</h4>
+                                                <div className="flex gap-2 mb-3">
+                                                    {[1,2,3,4,5].map(star => (
+                                                        <button key={star} onClick={() => setVerificationRating(star)} className="focus:outline-none transition-transform hover:scale-110">
+                                                            <Star className={`w-6 h-6 ${star <= verificationRating ? 'fill-gold-400 text-gold-400' : 'text-slate-300'}`} />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <textarea 
+                                                    className="w-full p-3 bg-white border border-emerald-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                    placeholder="Optional feedback..."
+                                                    value={verificationFeedback}
+                                                    onChange={e => setVerificationFeedback(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div className="flex gap-3">
+                                                <button 
+                                                    onClick={() => setIsDisputing(true)}
+                                                    className="flex-1 py-3 text-red-600 font-bold border border-red-200 rounded-xl hover:bg-red-50 transition-colors"
+                                                >
+                                                    Report Issue
+                                                </button>
+                                                <button 
+                                                    onClick={handleVerifyCompletion}
+                                                    disabled={isVerifying}
+                                                    className="flex-[2] py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 shadow-lg shadow-emerald-200 transition-colors flex items-center justify-center transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                                                >
+                                                    {isVerifying ? (
+                                                        <><Loader2 className="w-5 h-5 mr-2 animate-spin"/> Processing...</>
+                                                    ) : (
+                                                        <><CheckCircle2 className="w-5 h-5 mr-2" /> Verify & Release Funds</>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="space-y-4 animate-in fade-in">
+                                            <div>
+                                                <label className="block text-sm font-bold text-red-700 mb-2 flex items-center">
+                                                    <AlertTriangle className="w-4 h-4 mr-2" /> Report an Issue
+                                                </label>
+                                                <textarea 
+                                                    className="w-full p-3 bg-white border border-red-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                                                    placeholder="Describe the issue..."
+                                                    value={disputeReason}
+                                                    onChange={e => setDisputeReason(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button 
+                                                    onClick={() => setIsDisputing(false)}
+                                                    className="flex-1 py-3 text-slate-500 hover:text-navy-900 font-bold"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button 
+                                                    onClick={handleSubmitDispute}
+                                                    className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-200"
+                                                >
+                                                    Submit Dispute
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                             {/* Dispute Status Banner */}
+                             {selectedShift.isDisputed && (
+                                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                                    <h4 className="font-bold text-red-800 flex items-center">
+                                        <AlertTriangle className="w-5 h-5 mr-2" /> Dispute Active
+                                    </h4>
+                                    <p className="text-sm text-red-700 mt-1">
+                                        Funds are frozen pending admin review.
+                                    </p>
+                                    <p className="text-xs text-red-600 mt-2 italic">"{selectedShift.disputeReason}"</p>
+                                </div>
+                            )}
+
+                             {/* Verified Banner */}
+                             {selectedShift.status === ShiftStatus.VERIFIED && (
+                                <div className="bg-slate-100 border border-slate-200 p-4 rounded-xl flex flex-col items-center justify-center text-center">
+                                    <div className="bg-white p-2 rounded-full mb-2 shadow-sm">
+                                        <CheckCircle2 className="w-6 h-6 text-green-600" />
+                                    </div>
+                                    <h4 className="font-bold text-navy-900">Job Verified & Paid</h4>
+                                    <p className="text-xs text-slate-500 mt-1">Funds have been released to the provider.</p>
+                                    <div className="flex mt-3 text-gold-400">
+                                        {[1,2,3,4,5].map(i => <Star key={i} className={`w-4 h-4 ${i <= (selectedShift.clientRating || 0) ? 'fill-current' : 'text-slate-300'}`} />)}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
