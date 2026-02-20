@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { JobPosting, JobApplication, Role, StaffType, User } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 
-export const JobBoard = () => {
+export const CareersSection = () => {
     const { currentUser } = useAuth();
     const { jobs, addJob, updateJob, deleteJob, applications, updateApplication, submitApplication, addUser, users } = useData();
     

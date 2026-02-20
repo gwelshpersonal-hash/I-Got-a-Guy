@@ -273,7 +273,7 @@ export const AccountProfile = () => {
                                 name="toggle" 
                                 id="toggle" 
                                 className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 transform checked:translate-x-6 checked:border-green-500"
-                                checked={formData.urgentAlertsEnabled}
+                                checked={formData.urgentAlertsEnabled ?? false}
                                 onChange={e => setFormData({...formData, urgentAlertsEnabled: e.target.checked})}
                             />
                             <label htmlFor="toggle" className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer transition-colors duration-300 ${formData.urgentAlertsEnabled ? 'bg-green-500' : 'bg-slate-300'}`}></label>
@@ -421,26 +421,39 @@ export const AccountProfile = () => {
                                 )}
                             </div>
                             
-                            {/* Adding Skill Dropdown */}
+                            {/* Adding Skill Modal */}
                             {isAddingSkill && (
-                                <div className="mb-4 flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                                    <select 
-                                        className="text-sm p-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-navy-500 bg-white"
-                                        onChange={(e) => handleAddPendingSkill(e.target.value as ServiceCategory)}
-                                        value=""
-                                    >
-                                        <option value="" disabled>Select a skill...</option>
-                                        {availableToAdd.map(cat => (
-                                            <option key={cat} value={cat}>{cat}</option>
-                                        ))}
-                                    </select>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setIsAddingSkill(false)}
-                                        className="p-2 text-slate-400 hover:text-red-500"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
+                                <div className="fixed inset-0 bg-navy-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
+                                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="text-lg font-bold text-navy-900">Request Skill Authorization</h3>
+                                            <button onClick={() => setIsAddingSkill(false)} className="text-slate-400 hover:text-navy-900">
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        <p className="text-sm text-slate-500 mb-4">Select a skill category you would like to add to your profile. This will be sent to admin for approval.</p>
+                                        
+                                        <div className="space-y-4">
+                                            <select 
+                                                className="w-full p-3 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-navy-500 bg-white font-medium text-navy-900"
+                                                onChange={(e) => handleAddPendingSkill(e.target.value as ServiceCategory)}
+                                                value=""
+                                            >
+                                                <option value="" disabled>Select a skill...</option>
+                                                {availableToAdd.map(cat => (
+                                                    <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                            </select>
+                                            
+                                            <button 
+                                                type="button"
+                                                onClick={() => setIsAddingSkill(false)}
+                                                className="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 

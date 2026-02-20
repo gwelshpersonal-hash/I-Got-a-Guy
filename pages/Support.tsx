@@ -6,12 +6,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { Role, LegalDocument, FaqItem } from '../types';
 import { format } from 'date-fns';
 
+import { CareersSection } from '../components/CareersSection';
+
 export const Support = () => {
     const { faqs, legalDocuments, updateLegalDocument, addFaq, updateFaq, deleteFaq } = useData();
     const { currentUser } = useAuth();
     
     const isAdmin = currentUser?.role === Role.ADMIN;
 
+    const [activeTab, setActiveTab] = useState<'SUPPORT' | 'CAREERS'>('SUPPORT');
     const [openFaq, setOpenFaq] = useState<string | null>(null);
     const [msgSubject, setMsgSubject] = useState('');
     const [msgBody, setMsgBody] = useState('');
@@ -71,9 +74,27 @@ export const Support = () => {
                     <h1 className="text-3xl font-display font-black text-navy-900">Support Center</h1>
                     <p className="text-slate-500">We're here to help you get the job done.</p>
                 </div>
+                <div className="flex bg-white p-1 rounded-lg border border-gold-200">
+                    <button 
+                        onClick={() => setActiveTab('SUPPORT')}
+                        className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'SUPPORT' ? 'bg-navy-800 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                        Help & FAQs
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('CAREERS')}
+                        className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'CAREERS' ? 'bg-navy-800 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                        Join the Crew
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {activeTab === 'CAREERS' ? (
+                <CareersSection />
+            ) : (
+                <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Contact Info Cards */}
                 <div className="bg-white p-6 rounded-xl border border-gold-200 shadow-sm flex flex-col items-center text-center">
                     <div className="p-3 bg-navy-50 text-navy-600 rounded-full mb-3">
@@ -350,6 +371,8 @@ export const Support = () => {
                         </div>
                     </div>
                 </div>
+            )}
+            </>
             )}
         </div>
     );

@@ -33,7 +33,6 @@ const NAV_ITEMS = [
   { name: 'Market Data', path: '/pricing', icon: TrendingUp, roles: [Role.ADMIN] },
   
   // Shared/Other
-  { name: 'Join the Crew', path: '/jobs', icon: Briefcase, roles: [Role.CLIENT, Role.PROVIDER, Role.ADMIN, Role.EMPLOYEE, Role.MANAGER] },
   { name: 'My Profile', path: '/profile', icon: UserCircle, roles: [Role.CLIENT, Role.PROVIDER, Role.ADMIN, Role.EMPLOYEE, Role.MANAGER] },
   { name: 'Support', path: '/support', icon: HelpCircle, roles: [Role.CLIENT, Role.PROVIDER, Role.ADMIN, Role.EMPLOYEE, Role.MANAGER] },
 ];

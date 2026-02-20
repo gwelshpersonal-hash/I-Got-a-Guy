@@ -8,7 +8,6 @@ import { Staff } from './pages/Staff';
 import { Vendors } from './pages/Vendors';
 import { TimeClock } from './pages/TimeClock';
 import { Payroll } from './pages/Payroll';
-import { JobBoard } from './pages/JobBoard';
 import { PublicJobBoard } from './pages/PublicJobBoard';
 import { Sites } from './pages/Sites';
 import { Login } from './pages/Login';
@@ -41,7 +40,6 @@ const App = () => {
               <Route path="/vendors" element={<Vendors />} />
               <Route path="/time-clock" element={<TimeClock />} />
               <Route path="/payroll" element={<Payroll />} />
-              <Route path="/jobs" element={<JobBoard />} />
               <Route path="/support" element={<Support />} />
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/pricing" element={<PriceGuide />} />

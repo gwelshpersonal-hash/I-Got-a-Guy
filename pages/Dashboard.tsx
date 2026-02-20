@@ -812,12 +812,9 @@ export const Dashboard = () => {
 
       const checkEligible = (gig: Shift) => {
           if (!currentUser) return false;
-          // Middleware Check (Skills & Insurance)
-          const riskCheck = canProviderClaimJob(currentUser, gig);
-          if (!riskCheck.allowed) return false;
-          // High Value Qualification Check
-          if (gig.hasHighValueItems && !providerQualifications.canClaimHighValue) return false;
-          return true;
+          // Only filter out jobs where the provider lacks the skill.
+          // Insurance and High Value locks will be displayed in the card but kept in the top list.
+          return currentUser.skills?.includes(gig.category) || false;
       };
 
       const eligible = availableGigs.filter(g => checkEligible(g));
@@ -1115,7 +1112,7 @@ export const Dashboard = () => {
                   <div className="flex flex-wrap items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                         <div className="flex items-center gap-2"><Filter className="w-4 h-4 text-slate-400" /><span className="text-xs font-bold text-slate-500 uppercase">Filters:</span></div>
                         <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as ServiceCategory | 'ALL')} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-navy-900 outline-none focus:ring-2 focus:ring-gold-400"><option value="ALL">All Categories</option>{ALL_SERVICE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select>
-                        <div className="relative"><span className="absolute left-3 top-2 text-slate-400 text-sm">$</span><input type="number" placeholder="Min Pay" value={filterMinPay} onChange={(e) => setFilterMinPay(e.target.value ? parseFloat(e.target.value) : '')} className="w-28 pl-6 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-navy-900 outline-none focus:ring-2 focus:ring-gold-400"/></div>
+                        <div className="relative"><span className="absolute left-3 top-2 text-slate-400 text-sm">$</span><input type="number" placeholder="Min Pay" value={filterMinPay ?? ''} onChange={(e) => setFilterMinPay(e.target.value ? parseFloat(e.target.value) : '')} className="w-28 pl-6 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-navy-900 outline-none focus:ring-2 focus:ring-gold-400"/></div>
                         {(filterCategory !== 'ALL' || filterMinPay !== '') && <button onClick={() => { setFilterCategory('ALL'); setFilterMinPay(''); }} className="text-xs font-bold text-red-500 hover:text-red-700 ml-auto">Clear All</button>}
                   </div>
                   {!hasAuthorizedSkills && <div className="p-6 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-4 text-sm text-red-800 mb-6 shadow-sm"><Lock className="w-6 h-6 shrink-0 mt-0.5" /><div><p className="font-bold text-base">No Authorized Skills</p><p className="mt-1 opacity-90">You have not been authorized for any job categories yet.</p></div></div>}
