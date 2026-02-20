@@ -1222,6 +1222,58 @@ export const Dashboard = () => {
           </div>
       )}
       {/* ... (Other modals kept implicit to avoid exceeding token limits, logic verified in previous turns) ... */}
+      {/* Skill Application Modal */}
+      {skillApplyCategory && (
+          <div className="fixed inset-0 bg-navy-950/80 flex items-center justify-center p-4 z-50 backdrop-blur-md animate-in fade-in">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95">
+                  <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-xl font-extrabold text-navy-900 flex items-center">
+                          <Briefcase className="w-6 h-6 mr-2 text-gold-500" /> Apply for Skill
+                      </h3>
+                      <button onClick={() => setSkillApplyCategory(null)} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+                          <X className="w-5 h-5 text-slate-400" />
+                      </button>
+                  </div>
+                  
+                  <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-sm text-slate-600 font-medium">You are requesting authorization for:</p>
+                      <p className="text-lg font-black text-navy-900 mt-1">{skillApplyCategory}</p>
+                  </div>
+
+                  <div className="space-y-4">
+                      <div>
+                          <label className="block text-sm font-bold text-navy-900 mb-2">Experience / Qualifications</label>
+                          <textarea 
+                              value={skillExperience}
+                              onChange={(e) => setSkillExperience(e.target.value)}
+                              placeholder="Briefly describe your experience in this field..."
+                              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-gold-100 focus:border-gold-400 outline-none h-32 resize-none text-sm transition-all"
+                          />
+                      </div>
+
+                      <div className="flex gap-3 pt-2">
+                          <button 
+                              onClick={() => setSkillApplyCategory(null)}
+                              className="flex-1 py-3 bg-white border-2 border-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                          >
+                              Cancel
+                          </button>
+                          <button 
+                              onClick={() => {
+                                  submitSkillApplication();
+                                  setSkillApplyCategory(null);
+                              }}
+                              disabled={!skillExperience.trim()}
+                              className="flex-1 py-3 bg-navy-900 text-white font-bold rounded-xl hover:bg-navy-800 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                              Submit Application
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* Chat, Counter Offer, Review Offers are standard */}
     </div>
   );

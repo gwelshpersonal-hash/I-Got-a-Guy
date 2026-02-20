@@ -14,6 +14,7 @@ export const AccountProfile = () => {
     const [successMsg, setSuccessMsg] = useState('');
     const [formData, setFormData] = useState<Partial<User>>({});
     const [isAddingSkill, setIsAddingSkill] = useState(false);
+    const [selectedSkill, setSelectedSkill] = useState<ServiceCategory | ''>('');
 
     // Password change state (mock)
     const [newPassword, setNewPassword] = useState('');
@@ -112,20 +113,54 @@ export const AccountProfile = () => {
     };
 
     const handleAddPendingSkill = (skill: ServiceCategory) => {
-        if (!formData.pendingSkills?.includes(skill) && !formData.skills?.includes(skill)) {
-            setFormData(prev => ({
-                ...prev,
-                pendingSkills: [...(prev.pendingSkills || []), skill]
-            }));
+        console.log("Adding pending skill:", skill);
+        const currentPending = formData.pendingSkills || [];
+        
+        // Check if already pending or active
+        if (currentPending.includes(skill) || formData.skills?.includes(skill)) {
+            console.log("Skill already pending or active");
+            setIsAddingSkill(false);
+            setSelectedSkill('');
+            return;
         }
+
+        const newPending = [...currentPending, skill];
+        
+        setFormData(prev => ({
+            ...prev,
+            pendingSkills: newPending
+        }));
+
+        // Save to backend immediately
+        if (currentUser) {
+            const updatedUser = {
+                ...currentUser,
+                pendingSkills: newPending
+            };
+            console.log("Updating user with:", updatedUser);
+            updateUser(updatedUser);
+            setSuccessMsg(`Request for ${skill} authorization sent!`);
+            setTimeout(() => setSuccessMsg(''), 3000);
+        }
+        
         setIsAddingSkill(false);
+        setSelectedSkill('');
     };
 
     const handleRemovePendingSkill = (skill: ServiceCategory) => {
+        const newPending = formData.pendingSkills?.filter(s => s !== skill) || [];
+        
         setFormData(prev => ({
             ...prev,
-            pendingSkills: prev.pendingSkills?.filter(s => s !== skill)
+            pendingSkills: newPending
         }));
+
+        if (currentUser) {
+            updateUser({
+                ...currentUser,
+                pendingSkills: newPending
+            });
+        }
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -436,8 +471,8 @@ export const AccountProfile = () => {
                                         <div className="space-y-4">
                                             <select 
                                                 className="w-full p-3 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-navy-500 bg-white font-medium text-navy-900"
-                                                onChange={(e) => handleAddPendingSkill(e.target.value as ServiceCategory)}
-                                                value=""
+                                                onChange={(e) => setSelectedSkill(e.target.value as ServiceCategory)}
+                                                value={selectedSkill}
                                             >
                                                 <option value="" disabled>Select a skill...</option>
                                                 {availableToAdd.map(cat => (
@@ -445,13 +480,23 @@ export const AccountProfile = () => {
                                                 ))}
                                             </select>
                                             
-                                            <button 
-                                                type="button"
-                                                onClick={() => setIsAddingSkill(false)}
-                                                className="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
-                                            >
-                                                Cancel
-                                            </button>
+                                            <div className="flex gap-3">
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setIsAddingSkill(false)}
+                                                    className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => selectedSkill && handleAddPendingSkill(selectedSkill as ServiceCategory)}
+                                                    disabled={!selectedSkill}
+                                                    className="flex-1 py-3 bg-navy-900 text-white font-bold rounded-xl hover:bg-navy-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Submit Request
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
