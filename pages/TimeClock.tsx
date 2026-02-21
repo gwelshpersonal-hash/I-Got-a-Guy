@@ -136,6 +136,14 @@ export const TimeClock = () => {
       }
   };
 
+  const getChatPartner = (shift: Shift) => {
+      if (currentUser?.role === Role.CLIENT) {
+          return users.find(u => u.id === shift.userId);
+      } else {
+          return users.find(u => u.id === shift.clientId);
+      }
+  };
+
   const handleCompleteJob = async () => {
       if (!selectedJob || !currentUser) return;
 
@@ -262,10 +270,16 @@ export const TimeClock = () => {
                                         )}
                                     </div>
                                     <h3 className="text-lg font-bold text-navy-900">{job.description}</h3>
-                                    <p className="text-sm text-slate-600 flex items-center mt-2">
-                                        <MapPin className="w-4 h-4 mr-1 text-slate-400" /> 
+                                    <a 
+                                        href={`https://maps.google.com/?q=${encodeURIComponent(site?.address || '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-sm text-blue-600 hover:underline flex items-center mt-2"
+                                    >
+                                        <MapPin className="w-4 h-4 mr-1 text-blue-500" /> 
                                         {site?.address || 'Unknown Location'}
-                                    </p>
+                                    </a>
                                 </div>
                                 <div className="flex flex-col items-end">
                                     <span className="text-xl font-black text-emerald-600">${job.price}</span>
@@ -326,9 +340,15 @@ export const TimeClock = () => {
                                         </span>
                                     </div>
                                     <h3 className="font-bold text-navy-900">{job.description}</h3>
-                                    <p className="text-xs text-slate-500 mt-1">
+                                    <a 
+                                        href={`https://maps.google.com/?q=${encodeURIComponent(site?.address || '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-xs text-blue-600 hover:underline mt-1 block"
+                                    >
                                         {site?.address || 'Unknown Location'}
-                                    </p>
+                                    </a>
                                 </div>
                                 <span className="text-sm font-bold text-slate-400">${job.price}</span>
                             </div>
@@ -475,8 +495,16 @@ export const TimeClock = () => {
                            </div>
                        )}
                        
-                       <div className="text-xs text-slate-500 mt-2 pt-2 border-t border-gold-200/50">
-                           Site: {sites.find(s => s.id === selectedJob.siteId)?.address}
+                       <div className="text-xs text-slate-500 mt-2 pt-2 border-t border-gold-200/50 flex items-center">
+                           <span className="font-bold mr-1">Site:</span>
+                           <a 
+                               href={`https://maps.google.com/?q=${encodeURIComponent(sites.find(s => s.id === selectedJob.siteId)?.address || '')}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="text-blue-600 hover:underline"
+                           >
+                               {sites.find(s => s.id === selectedJob.siteId)?.address}
+                           </a>
                        </div>
                    </div>
 
@@ -561,8 +589,12 @@ export const TimeClock = () => {
                   {/* Chat Header */}
                   <div className="bg-navy-900 p-4 flex justify-between items-center shadow-md z-10">
                       <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gold-400 flex items-center justify-center text-navy-900 font-bold">
-                              {getChatPartnerName(chatGig).charAt(0)}
+                          <div className="h-10 w-10 rounded-full bg-gold-400 flex items-center justify-center text-navy-900 font-bold overflow-hidden">
+                              {getChatPartner(chatGig)?.profileImage ? (
+                                  <img src={getChatPartner(chatGig)?.profileImage} alt="Profile" className="h-full w-full object-cover" />
+                              ) : (
+                                  getChatPartnerName(chatGig).charAt(0)
+                              )}
                           </div>
                           <div>
                               <h3 className="font-bold text-white text-sm">{getChatPartnerName(chatGig)}</h3>

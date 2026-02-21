@@ -3,11 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { Shift, ShiftStatus, Role } from '../types';
 import { format, isSameDay, addDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, X, Star, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, X, Star, Loader2, ShieldCheck, AlertCircle, ImageIcon, Camera, MessageCircle, Navigation } from 'lucide-react';
 
 export const Schedule = () => {
     const { currentUser } = useAuth();
-    const { shifts, updateShift, sites, verifyJob } = useData();
+    const { shifts, updateShift, sites, verifyJob, users } = useData();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
 
@@ -189,17 +189,135 @@ export const Schedule = () => {
                 <div className="fixed inset-0 bg-navy-950/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in fade-in">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-start mb-6">
-                            <h2 className="text-2xl font-bold text-navy-900">Job Details</h2>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h2 className="text-2xl font-bold text-navy-900">Job Details</h2>
+                                    {selectedShift.hasHighValueItems && (
+                                        <span className="text-[10px] font-bold bg-purple-600 text-white px-2 py-1 rounded shadow-sm flex items-center">
+                                            <ShieldCheck className="w-3 h-3 mr-1" /> HIGH VALUE
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-slate-500 text-sm">{selectedShift.description}</p>
+                            </div>
                             <button onClick={() => setSelectedShift(null)} className="text-slate-400 hover:text-navy-900">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
                         <div className="space-y-6">
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                <p className="text-sm text-slate-500 uppercase font-bold mb-1">Description</p>
-                                <p className="font-medium text-navy-900">{selectedShift.description}</p>
-                            </div>
+                            {/* Provider View - Full Details */}
+                            {isProvider && (
+                                <>
+                                    {/* Location & Client Info */}
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                        <div className="flex items-start gap-3 mb-3">
+                                            <MapPin className="w-5 h-5 text-gold-500 mt-0.5 shrink-0" />
+                                            <div>
+                                                <h4 className="text-sm font-bold text-navy-900">Location</h4>
+                                                <a 
+                                                    href={`https://maps.google.com/?q=${encodeURIComponent(sites.find(s => s.id === selectedShift.siteId)?.address || '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-sm text-blue-600 hover:underline break-words"
+                                                >
+                                                    {sites.find(s => s.id === selectedShift.siteId)?.address || 'Unknown Address'}
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <div className="h-5 w-5 rounded-full bg-navy-100 flex items-center justify-center text-navy-600 text-xs font-bold shrink-0 mt-0.5">
+                                                {users.find(u => u.id === selectedShift.clientId)?.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h4 className="text-sm font-bold text-navy-900">Client</h4>
+                                                <p className="text-sm text-slate-600">{users.find(u => u.id === selectedShift.clientId)?.name || 'Unknown Client'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Pre-Work Photos (Read Only) */}
+                                    {selectedShift.preWorkPhotos && selectedShift.preWorkPhotos.length > 0 && (
+                                        <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
+                                            <label className="block text-sm font-bold text-purple-900 mb-2 flex items-center">
+                                                <AlertCircle className="w-4 h-4 mr-2" /> Pre-Work Condition Photos
+                                            </label>
+                                            <div className="flex gap-3 overflow-x-auto pb-2">
+                                                {selectedShift.preWorkPhotos.map((img, i) => (
+                                                    <div key={i} className="w-20 h-20 rounded-xl overflow-hidden border border-purple-200 shrink-0 shadow-sm">
+                                                        <img src={img} alt={`Pre-work ${i}`} className="w-full h-full object-cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Initial Site Photos */}
+                                    {selectedShift.photos && selectedShift.photos.length > 0 && (
+                                        <div>
+                                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center">
+                                                <ImageIcon className="w-4 h-4 mr-1" /> Initial Site Photos
+                                            </h3>
+                                            <div className="flex gap-3 overflow-x-auto pb-2">
+                                                {selectedShift.photos.map((photo, i) => (
+                                                    <div key={i} className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shrink-0 shadow-sm">
+                                                        <img src={photo} alt={`Job site ${i}`} className="w-full h-full object-cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Completion Photos */}
+                                    {selectedShift.completionPhotos && selectedShift.completionPhotos.length > 0 && (
+                                        <div>
+                                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center">
+                                                <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-500" /> Proof of Work (Completion)
+                                            </h3>
+                                            <div className="flex gap-3 overflow-x-auto pb-2">
+                                                {selectedShift.completionPhotos.map((photo, i) => (
+                                                    <div key={i} className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shrink-0 shadow-sm">
+                                                        <img src={photo} alt={`Completion ${i}`} className="w-full h-full object-cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Financials */}
+                                    <div className="bg-gold-50 p-4 rounded-xl border border-gold-200">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm font-bold text-navy-900">Final Price</span>
+                                            <span className="font-black text-xl text-navy-900">${selectedShift.price}</span>
+                                        </div>
+                                        {selectedShift.providerFeedback && selectedShift.providerFeedback.includes('[PRICE ADJUSTMENT]') && (
+                                            <div className="text-xs text-amber-700 bg-amber-100/50 p-2 rounded border border-amber-200 mt-2">
+                                                <strong>Note:</strong> {selectedShift.providerFeedback}
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Client View (Simplified Description) */}
+                            {!isProvider && (
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    <p className="text-sm text-slate-500 uppercase font-bold mb-1">Description</p>
+                                    <p className="font-medium text-navy-900">{selectedShift.description}</p>
+                                    <div className="mt-4 pt-4 border-t border-slate-200">
+                                        <p className="text-sm text-slate-500 uppercase font-bold mb-1">Location</p>
+                                        <a 
+                                            href={`https://maps.google.com/?q=${encodeURIComponent(sites.find(s => s.id === selectedShift.siteId)?.address || '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm text-blue-600 hover:underline break-words flex items-center"
+                                        >
+                                            <MapPin className="w-4 h-4 mr-1" />
+                                            {sites.find(s => s.id === selectedShift.siteId)?.address || 'Unknown Address'}
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Client Verification Flow */}
                             {isClient && selectedShift.status === ShiftStatus.COMPLETED && !selectedShift.isDisputed && (

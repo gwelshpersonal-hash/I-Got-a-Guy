@@ -75,6 +75,7 @@ export interface User {
 
   // Provider specific fields
   companyName?: string;
+  profileImage?: string; // URL/Base64 of the uploaded profile image or logo
   skills?: ServiceCategory[]; 
   pendingSkills?: ServiceCategory[]; // Skills requested but not yet approved by Admin
   rating?: number;

@@ -28,6 +28,7 @@ export const AccountProfile = () => {
                 phone: currentUser.phone,
                 urgentAlertsEnabled: currentUser.urgentAlertsEnabled,
                 companyName: currentUser.companyName,
+                profileImage: currentUser.profileImage,
                 insuranceType: currentUser.insuranceType,
                 coiUrl: currentUser.coiUrl,
                 skills: currentUser.skills || [],
@@ -45,6 +46,19 @@ export const AccountProfile = () => {
             reader.onloadend = () => {
                 if (reader.result) {
                     setFormData(prev => ({ ...prev, coiUrl: reader.result as string }));
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if (reader.result) {
+                    setFormData(prev => ({ ...prev, profileImage: reader.result as string }));
                 }
             };
             reader.readAsDataURL(file);
@@ -224,8 +238,12 @@ export const AccountProfile = () => {
     return (
         <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in">
             <div className="flex items-center gap-4">
-                <div className="h-16 w-16 bg-navy-900 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-gold-400">
-                    {currentUser.name.charAt(0)}
+                <div className="h-16 w-16 bg-navy-900 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-gold-400 overflow-hidden">
+                    {formData.profileImage ? (
+                        <img src={formData.profileImage} alt="Profile" className="h-full w-full object-cover" />
+                    ) : (
+                        currentUser.name.charAt(0)
+                    )}
                 </div>
                 <div>
                     <h1 className="text-3xl font-extrabold text-navy-900 tracking-tight">Account Settings</h1>
@@ -247,6 +265,31 @@ export const AccountProfile = () => {
                     </h2>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Profile Image Upload */}
+                        <div className="col-span-1 md:col-span-2 flex items-center gap-6 pb-6 border-b border-slate-100 mb-2">
+                            <div className="relative group cursor-pointer">
+                                <div className="h-24 w-24 rounded-full bg-slate-100 border-4 border-white shadow-md overflow-hidden flex items-center justify-center">
+                                    {formData.profileImage ? (
+                                        <img src={formData.profileImage} alt="Profile" className="h-full w-full object-cover" />
+                                    ) : (
+                                        <UserCircle className="w-12 h-12 text-slate-300" />
+                                    )}
+                                </div>
+                                <label className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    <Camera className="w-8 h-8 text-white" />
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleProfileImageChange} />
+                                </label>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-navy-900">Profile Photo / Logo</h3>
+                                <p className="text-sm text-slate-500 mb-2">Upload a professional photo or business logo.</p>
+                                <label className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition-colors inline-flex items-center">
+                                    <Upload className="w-3 h-3 mr-1.5" /> Upload Image
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleProfileImageChange} />
+                                </label>
+                            </div>
+                        </div>
+
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Full Name</label>
                             <input 

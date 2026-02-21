@@ -244,6 +244,14 @@ export const Dashboard = () => {
       setChatMessage('');
   };
 
+  const getChatPartner = (shift: Shift) => {
+      if (currentUser?.role === Role.CLIENT) {
+          return users.find(u => u.id === shift.userId);
+      } else {
+          return users.find(u => u.id === shift.clientId);
+      }
+  };
+
   const getChatPartnerName = (shift: Shift) => {
       if (currentUser?.role === Role.CLIENT) {
           return users.find(u => u.id === shift.userId)?.name || "Provider";
@@ -1363,8 +1371,12 @@ export const Dashboard = () => {
                                   <div key={offer.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 hover:border-indigo-200 transition-colors">
                                       <div className="flex justify-between items-start mb-3">
                                           <div className="flex items-center gap-3">
-                                              <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-                                                  {provider?.name.charAt(0)}
+                                              <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold overflow-hidden">
+                                                  {provider?.profileImage ? (
+                                                      <img src={provider.profileImage} alt="Profile" className="h-full w-full object-cover" />
+                                                  ) : (
+                                                      provider?.name.charAt(0)
+                                                  )}
                                               </div>
                                               <div>
                                                   <div className="font-bold text-navy-900">{provider?.name}</div>
@@ -1406,7 +1418,81 @@ export const Dashboard = () => {
           </div>
       )}
 
-      {/* Chat, Counter Offer, Review Offers are standard */}
+      {/* Chat Modal */}
+      {chatGig && currentUser && (
+          <div className="fixed inset-0 bg-navy-950/80 flex items-center justify-center p-4 z-[60] backdrop-blur-md animate-in fade-in">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm flex flex-col h-[500px] animate-in zoom-in-95 overflow-hidden">
+                  {/* Chat Header */}
+                  <div className="bg-navy-900 p-4 flex justify-between items-center shadow-md z-10">
+                      <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-gold-400 flex items-center justify-center text-navy-900 font-bold overflow-hidden">
+                              {getChatPartner(chatGig)?.profileImage ? (
+                                  <img src={getChatPartner(chatGig)?.profileImage} alt="Profile" className="h-full w-full object-cover" />
+                              ) : (
+                                  getChatPartnerName(chatGig).charAt(0)
+                              )}
+                          </div>
+                          <div>
+                              <h3 className="font-bold text-white text-sm">{getChatPartnerName(chatGig)}</h3>
+                              <p className="text-navy-200 text-xs">{chatGig.category}</p>
+                          </div>
+                      </div>
+                      <button onClick={() => setChatGig(null)} className="p-2 hover:bg-navy-800 rounded-full text-white/70 hover:text-white transition-colors">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  {/* Messages Area */}
+                  <div className="flex-1 bg-slate-50 p-4 overflow-y-auto" ref={chatScrollRef}>
+                      {messages.filter(m => m.shiftId === chatGig.id).length === 0 ? (
+                          <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs text-center p-8">
+                              <MessageCircle className="w-8 h-8 mb-2 opacity-30" />
+                              <p>No messages yet.</p>
+                              <p>Coordinate schedule and arrival details here.</p>
+                          </div>
+                      ) : (
+                          <div className="space-y-3">
+                              {messages.filter(m => m.shiftId === chatGig.id).map(msg => {
+                                  const isMe = msg.senderId === currentUser.id;
+                                  return (
+                                      <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                          <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
+                                              isMe 
+                                              ? 'bg-blue-600 text-white rounded-br-none' 
+                                              : 'bg-white text-navy-900 border border-slate-200 rounded-bl-none'
+                                          }`}>
+                                              {msg.content}
+                                              <div className={`text-[9px] mt-1 text-right ${isMe ? 'text-blue-200' : 'text-slate-400'}`}>
+                                                  {format(msg.timestamp, 'h:mm a')}
+                                              </div>
+                                          </div>
+                                      </div>
+                                  );
+                              })}
+                          </div>
+                      )}
+                  </div>
+
+                  {/* Input Area */}
+                  <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-100 flex gap-2">
+                      <input 
+                          type="text" 
+                          className="flex-1 bg-slate-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all text-navy-900"
+                          placeholder="Type a message..."
+                          value={chatMessage}
+                          onChange={e => setChatMessage(e.target.value)}
+                      />
+                      <button 
+                          type="submit" 
+                          disabled={!chatMessage.trim()}
+                          className="p-2.5 bg-gold-400 text-navy-900 rounded-full hover:bg-gold-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                      >
+                          <Send className="w-4 h-4" />
+                      </button>
+                  </form>
+              </div>
+          </div>
+      )}
     </div>
   );
 };

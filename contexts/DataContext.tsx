@@ -63,6 +63,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 const STORAGE_KEY_SHIFTS = 'iw_shifts';
+const STORAGE_KEY_USERS = 'iw_users';
 const STORAGE_KEY_REF_ENABLED = 'iw_referral_enabled';
 const STORAGE_KEY_MESSAGES = 'iw_messages';
 const STORAGE_KEY_JOBS = 'iw_jobs';
@@ -168,7 +169,23 @@ const SAMPLE_JOBS: Partial<Record<ServiceCategory, { desc: string, min: number, 
 };
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [users, setUsers] = useState<User[]>(() => {
+      const saved = localStorage.getItem(STORAGE_KEY_USERS);
+      if (saved) {
+          try {
+              return JSON.parse(saved);
+          } catch (e) {
+              return MOCK_USERS;
+          }
+      }
+      return MOCK_USERS;
+  });
+
+  // Persist users whenever they change
+  useEffect(() => {
+      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+  }, [users]);
+
   const [sites, setSites] = useState<Site[]>(MOCK_SITES);
   
   // Initialize Shifts from LocalStorage to persist status updates
