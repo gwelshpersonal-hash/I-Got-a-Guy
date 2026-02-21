@@ -1274,6 +1274,138 @@ export const Dashboard = () => {
           </div>
       )}
 
+      {/* Counter Offer Modal (Provider) */}
+      {counterGig && (
+          <div className="fixed inset-0 bg-navy-950/80 flex items-center justify-center p-4 z-50 backdrop-blur-md animate-in fade-in">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-extrabold text-navy-900 flex items-center">
+                          <Scale className="w-6 h-6 mr-2 text-gold-500" /> Make Counter Offer
+                      </h3>
+                      <button onClick={() => setCounterGig(null)} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+                          <X className="w-5 h-5 text-slate-400" />
+                      </button>
+                  </div>
+                  
+                  <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Original Request</p>
+                      <p className="font-bold text-navy-900 text-lg">{counterGig.description}</p>
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-200">
+                          <span className="text-sm text-slate-600">Client Offer:</span>
+                          <span className="font-black text-emerald-600 text-lg">${counterGig.price}</span>
+                      </div>
+                  </div>
+
+                  <div className="space-y-4">
+                      <div>
+                          <label className="block text-sm font-bold text-navy-900 mb-2">Your Price ($)</label>
+                          <div className="relative">
+                              <span className="absolute left-4 top-4 text-slate-400 font-bold">$</span>
+                              <input 
+                                  type="number" 
+                                  value={counterAmount}
+                                  onChange={(e) => setCounterAmount(e.target.value)}
+                                  className="w-full pl-8 p-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-gold-100 focus:border-gold-400 outline-none font-black text-xl text-navy-900 transition-all"
+                                  placeholder="0.00"
+                              />
+                          </div>
+                      </div>
+                      
+                      <div>
+                          <label className="block text-sm font-bold text-navy-900 mb-2">Message to Client</label>
+                          <textarea 
+                              value={counterMessage}
+                              onChange={(e) => setCounterMessage(e.target.value)}
+                              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-gold-100 focus:border-gold-400 outline-none h-32 resize-none text-sm transition-all"
+                              placeholder="Explain why you are requesting a different price..."
+                          />
+                      </div>
+
+                      <button 
+                          onClick={handleCounterSubmit}
+                          disabled={!counterAmount || parseFloat(counterAmount) <= 0}
+                          className="w-full py-4 bg-navy-900 text-white font-bold rounded-xl hover:bg-navy-800 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2 flex items-center justify-center"
+                      >
+                          <Send className="w-5 h-5 mr-2" /> Send Counter Offer
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* Review Offers Modal (Client) */}
+      {reviewOffersGig && (
+          <div className="fixed inset-0 bg-navy-950/80 flex items-center justify-center p-4 z-50 backdrop-blur-md animate-in fade-in">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-extrabold text-navy-900 flex items-center">
+                          <Scale className="w-6 h-6 mr-2 text-indigo-600" /> Review Offers
+                      </h3>
+                      <button onClick={() => setReviewOffersGig(null)} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+                          <X className="w-5 h-5 text-slate-400" />
+                      </button>
+                  </div>
+
+                  <div className="mb-6">
+                      <h4 className="font-bold text-navy-900 mb-1">{reviewOffersGig.description}</h4>
+                      <p className="text-sm text-slate-500">Original Budget: ${reviewOffersGig.price}</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                      {reviewOffersGig.counterOffers?.filter(o => o.status === 'PENDING').length === 0 ? (
+                          <div className="text-center py-8 text-slate-400">
+                              No pending offers at the moment.
+                          </div>
+                      ) : (
+                          reviewOffersGig.counterOffers?.filter(o => o.status === 'PENDING').map(offer => {
+                              const provider = users.find(u => u.id === offer.providerId);
+                              return (
+                                  <div key={offer.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 hover:border-indigo-200 transition-colors">
+                                      <div className="flex justify-between items-start mb-3">
+                                          <div className="flex items-center gap-3">
+                                              <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                                  {provider?.name.charAt(0)}
+                                              </div>
+                                              <div>
+                                                  <div className="font-bold text-navy-900">{provider?.name}</div>
+                                                  <div className="text-xs text-slate-500 flex items-center">
+                                                      <Star className="w-3 h-3 text-gold-400 mr-1 fill-current" /> {provider?.rating} Rating
+                                                  </div>
+                                              </div>
+                                          </div>
+                                          <div className="text-right">
+                                              <div className="text-2xl font-black text-emerald-600">${offer.amount}</div>
+                                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                  {offer.amount > (reviewOffersGig.price || 0) ? `+$${offer.amount - (reviewOffersGig.price || 0)}` : 'Match'}
+                                              </div>
+                                          </div>
+                                      </div>
+                                      
+                                      <div className="bg-white p-3 rounded-xl border border-slate-100 text-sm text-slate-600 italic mb-4 relative">
+                                          <div className="absolute -top-2 left-6 w-4 h-4 bg-white border-t border-l border-slate-100 transform rotate-45"></div>
+                                          "{offer.message}"
+                                      </div>
+
+                                      <div className="flex gap-3">
+                                          <button className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-500 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm">
+                                              Decline
+                                          </button>
+                                          <button 
+                                              onClick={() => handleAcceptCounter(offer)}
+                                              className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-md hover:shadow-lg transition-all text-sm flex items-center justify-center"
+                                          >
+                                              Accept Offer
+                                          </button>
+                                      </div>
+                                  </div>
+                              );
+                          })
+                      )}
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* Chat, Counter Offer, Review Offers are standard */}
     </div>
   );

@@ -19,6 +19,8 @@ export const SERVICE_CATEGORIES = {
   PLUMBING:      { risk: 'HIGH',   fee: 12.00 },
   CONSTRUCTION:  { risk: 'HIGH',   fee: 12.00 },
   AUTO:          { risk: 'HIGH',   fee: 12.00 },
+  JOBSITE_LABOR: { risk: 'HIGH',   fee: 12.00 },
+  POWER_WASHING: { risk: 'HIGH',   fee: 12.00 },
   OTHER:         { risk: 'LOW',    fee: 3.00 }
 };
 

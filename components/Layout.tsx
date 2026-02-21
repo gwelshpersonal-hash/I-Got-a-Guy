@@ -71,7 +71,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <img 
               src={APP_LOGO_URL} 
               alt="I Got A Guy Logo" 
-              className="h-14 w-auto object-contain drop-shadow-md"
+              className="h-24 w-auto object-contain drop-shadow-md"
             />
           </div>
           
@@ -150,7 +150,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <img 
               src={APP_LOGO_URL} 
               alt="I Got A Guy Logo" 
-              className="h-10 w-auto object-contain"
+              className="h-12 w-auto object-contain"
             />
         </div>
         <div className="flex items-center gap-3">
