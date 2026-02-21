@@ -43,11 +43,11 @@ export const CATEGORY_RISK_MAPPING: Record<ServiceCategory, { risk: keyof typeof
   PLUMBING: { risk: RISK_LEVELS.HIGH },
   AUTO: { risk: RISK_LEVELS.HIGH },
   CONSTRUCTION: { risk: RISK_LEVELS.HIGH },
-  JOBSITE_LABOR: { risk: RISK_LEVELS.HIGH }, 
+  JOBSITE_LABOR: { risk: RISK_LEVELS.HIGH }, // Corrected for 2026 standards
+  POWER_WASHING: { risk: RISK_LEVELS.HIGH }, // Moved to HIGH due to high-PSI liability
   HANDYMAN: { risk: RISK_LEVELS.MEDIUM },
   GENERAL_LABOR: { risk: RISK_LEVELS.MEDIUM },
   LANDSCAPING: { risk: RISK_LEVELS.MEDIUM },
-  POWER_WASHING: { risk: RISK_LEVELS.MEDIUM },
   CLEANING: { risk: RISK_LEVELS.LOW },
   COMPUTER: { risk: RISK_LEVELS.LOW },
   OTHER: { risk: RISK_LEVELS.LOW },

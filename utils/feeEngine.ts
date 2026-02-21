@@ -18,7 +18,7 @@ export const calculateJobSplit = (
   // Tiered Protection Fee (Restored Actuals: $3, $5, or $12)
   const mapping = CATEGORY_RISK_MAPPING[category];
   const riskLevel = mapping ? mapping.risk : RISK_LEVELS.LOW;
-  const baseProtectionFee = INSURANCE_FEES[riskLevel] || 3.00; // Updated fallback to 3.00
+  const baseProtectionFee = INSURANCE_FEES[riskLevel] || 3.00;
   
   const protectionFee = hasOwnInsurance ? 0 : baseProtectionFee;
   
