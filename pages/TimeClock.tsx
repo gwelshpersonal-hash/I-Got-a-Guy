@@ -171,9 +171,9 @@ export const TimeClock = () => {
           };
       } catch (error) {
           console.error("GPS Verification Failed", error);
-          // Block completion for High-Risk or High-Value jobs if GPS is denied
+          // HARD LOCK: Block completion for high-risk or high-value jobs if GPS fails
           if (selectedJob.hasHighValueItems || (selectedJob.price || 0) > 200) {
-              alert("GPS LOCK REQUIRED: We cannot verify service delivery for this job without a location fix. Please enable location services and try again.");
+              alert("GPS LOCK REQUIRED: We cannot verify service delivery without a location fix. Please ensure location services are enabled and try again.");
               setIsSubmitting(false);
               return; 
           }

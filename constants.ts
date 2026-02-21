@@ -33,9 +33,9 @@ export const RISK_LEVELS = {
 } as const;
 
 export const INSURANCE_FEES = {
-  [RISK_LEVELS.LOW]: 3.00,    // Fix from 2.00
+  [RISK_LEVELS.LOW]: 3.00,    // Restored from 2.00
   [RISK_LEVELS.MEDIUM]: 5.00, 
-  [RISK_LEVELS.HIGH]: 12.00   // Fix from 10.00
+  [RISK_LEVELS.HIGH]: 12.00   // Restored from 10.00
 };
 
 export const CATEGORY_RISK_MAPPING: Record<ServiceCategory, { risk: keyof typeof RISK_LEVELS }> = {
@@ -43,8 +43,8 @@ export const CATEGORY_RISK_MAPPING: Record<ServiceCategory, { risk: keyof typeof
   PLUMBING: { risk: RISK_LEVELS.HIGH },
   AUTO: { risk: RISK_LEVELS.HIGH },
   CONSTRUCTION: { risk: RISK_LEVELS.HIGH },
-  JOBSITE_LABOR: { risk: RISK_LEVELS.HIGH }, // Corrected for 2026 standards
-  POWER_WASHING: { risk: RISK_LEVELS.HIGH }, // Moved to HIGH due to high-PSI liability
+  JOBSITE_LABOR: { risk: RISK_LEVELS.HIGH }, 
+  POWER_WASHING: { risk: RISK_LEVELS.HIGH }, // Corrected for 2026 liability
   HANDYMAN: { risk: RISK_LEVELS.MEDIUM },
   GENERAL_LABOR: { risk: RISK_LEVELS.MEDIUM },
   LANDSCAPING: { risk: RISK_LEVELS.MEDIUM },
