@@ -26,7 +26,7 @@ export enum ShiftStatus {
 export type ShiftType = 'SCHEDULED' | 'URGENT';
 export type EscrowStatus = 'PENDING' | 'SECURED' | 'DISPUTED' | 'RELEASED' | 'REFUNDED' | 'PARTIAL_REFUND';
 
-export type ServiceCategory = 'LANDSCAPING' | 'MOVING' | 'CLEANING' | 'HANDYMAN' | 'PLUMBING' | 'AUTO' | 'OTHER' | 'CONSTRUCTION' | 'COMPUTER' | 'GENERAL_LABOR' | 'JOBSITE_LABOR' | 'POWER_WASHING';
+export type ServiceCategory = 'LANDSCAPING' | 'MOVING' | 'CLEANING' | 'HANDYMAN' | 'PLUMBING' | 'AUTO' | 'CONSTRUCTION' | 'COMPUTER' | 'GENERAL_LABOR' | 'JOBSITE_LABOR' | 'POWER_WASHING';
 
 export interface Organization {
   id: string;
@@ -161,10 +161,13 @@ export interface Shift {
   // Verification Location
   completionLat?: number;
   completionLng?: number;
+  checkInLat?: number;
+  checkInLng?: number;
 
   // Job Completion Fields
   providerFeedback?: string; // Notes from the worker
   completedAt?: Date;
+  checkInTime?: Date;
   
   // Provider Tracking
   enRouteAt?: Date; // When provider clicked "Start Travel"
@@ -173,6 +176,11 @@ export interface Shift {
   clientRating?: number; // 1-5 Stars
   clientFeedback?: string;
   clientConfirmedAt?: Date;
+  
+  // Photos
+  photos?: string[];     // URLs or Base64 strings of attached job photos (Initial request)
+  completionPhotos?: string[]; // URLs or Base64 strings of proof of work (Completion)
+  arrivalPhotos?: string[]; // URLs or Base64 strings of arrival photos (Check-in)
 }
 
 export interface Message {

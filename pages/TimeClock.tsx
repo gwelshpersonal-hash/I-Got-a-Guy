@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { Shift, ShiftStatus, Role } from '../types';
 import { format, isToday, isPast, isSameDay } from 'date-fns';
-import { MapPin, CheckCircle2, MessageSquare, Clock, AlertCircle, ChevronRight, Star, Calendar, Image as ImageIcon, Camera, X, MessageCircle, Send, ShieldCheck, Lock, Navigation } from 'lucide-react';
+import { MapPin, CheckCircle2, MessageSquare, Clock, AlertCircle, ChevronRight, Star, Calendar, Image as ImageIcon, Camera, X, MessageCircle, Send, ShieldCheck, Lock, Navigation, Phone } from 'lucide-react';
 import { getCurrentPosition } from '../utils/geo';
 import { CATEGORY_RISK_MAPPING, RISK_LEVELS } from '../constants';
 
@@ -24,6 +24,8 @@ export const TimeClock = () => {
   const [completionImages, setCompletionImages] = useState<string[]>([]);
   // Pre-Work Photos State
   const [preWorkImages, setPreWorkImages] = useState<string[]>([]);
+  // Arrival Photos State
+  const [arrivalImages, setArrivalImages] = useState<string[]>([]);
 
   // Chat State
   const [chatGig, setChatGig] = useState<Shift | null>(null);
@@ -64,6 +66,7 @@ export const TimeClock = () => {
       setPriceChangeReason('');
       setCompletionImages([]);
       setPreWorkImages(job.preWorkPhotos || []);
+      setArrivalImages(job.arrivalPhotos || []);
   };
 
   const handleStartTravel = (e: React.MouseEvent, job: Shift) => {
@@ -76,7 +79,7 @@ export const TimeClock = () => {
       alert(`Client notified: You are en route to ${job.description}!`);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'PRE_WORK' | 'COMPLETION') => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'PRE_WORK' | 'COMPLETION' | 'ARRIVAL') => {
     const files = e.target.files;
     if (files) {
         Array.from(files).forEach((file: File) => {
@@ -93,6 +96,14 @@ export const TimeClock = () => {
                                 preWorkPhotos: [...(selectedJob.preWorkPhotos || []), reader.result as string]
                             });
                         }
+                    } else if (type === 'ARRIVAL') {
+                        setArrivalImages(prev => [...prev, reader.result as string]);
+                        if (selectedJob) {
+                            updateShift({
+                                ...selectedJob,
+                                arrivalPhotos: [...(selectedJob.arrivalPhotos || []), reader.result as string]
+                            });
+                        }
                     } else {
                         setCompletionImages(prev => [...prev, reader.result as string]);
                     }
@@ -103,12 +114,18 @@ export const TimeClock = () => {
     }
   };
 
-  const removeImage = (index: number, type: 'PRE_WORK' | 'COMPLETION') => {
+  const removeImage = (index: number, type: 'PRE_WORK' | 'COMPLETION' | 'ARRIVAL') => {
       if (type === 'PRE_WORK') {
           const newImages = preWorkImages.filter((_, i) => i !== index);
           setPreWorkImages(newImages);
           if (selectedJob) {
               updateShift({ ...selectedJob, preWorkPhotos: newImages });
+          }
+      } else if (type === 'ARRIVAL') {
+          const newImages = arrivalImages.filter((_, i) => i !== index);
+          setArrivalImages(newImages);
+          if (selectedJob) {
+              updateShift({ ...selectedJob, arrivalPhotos: newImages });
           }
       } else {
           setCompletionImages(prev => prev.filter((_, i) => i !== index));
@@ -142,6 +159,45 @@ export const TimeClock = () => {
       } else {
           return users.find(u => u.id === shift.clientId);
       }
+  };
+
+  const handleCheckIn = async () => {
+      if (!selectedJob || !currentUser) return;
+
+      setIsSubmitting(true);
+
+      let checkInCoords = { lat: 0, lng: 0 };
+      try {
+          const pos = await getCurrentPosition();
+          checkInCoords = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude
+          };
+      } catch (error) {
+          console.error("GPS Verification Failed", error);
+          alert("GPS Verification Required: We cannot verify your arrival without a location fix. Please ensure location services are enabled and try again.");
+          setIsSubmitting(false);
+          return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const now = new Date();
+
+      const updatedJob: Shift = {
+          ...selectedJob,
+          status: ShiftStatus.IN_PROGRESS,
+          start: now, // Reschedule to now
+          checkInTime: now,
+          checkInLat: checkInCoords.lat || undefined,
+          checkInLng: checkInCoords.lng || undefined,
+          arrivalPhotos: arrivalImages
+      };
+
+      updateShift(updatedJob);
+      setIsSubmitting(false);
+      setSelectedJob(updatedJob); // Keep modal open and switch to completion view
+      // alert("You are checked in! Good luck with the job."); // Removed to allow immediate flow
   };
 
   const handleCompleteJob = async () => {
@@ -219,6 +275,7 @@ export const TimeClock = () => {
   };
 
   const isCompleteDisabled = (selectedJob?.hasHighValueItems && preWorkImages.length === 0) || completionImages.length === 0;
+  const isCheckIn = selectedJob?.status === ShiftStatus.ACCEPTED || selectedJob?.status === ShiftStatus.EN_ROUTE;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in">
@@ -241,13 +298,14 @@ export const TimeClock = () => {
                 myJobs.map(job => {
                     const site = sites.find(s => s.id === job.siteId);
                     const isEnRoute = job.status === ShiftStatus.EN_ROUTE;
+                    const isInProgress = job.status === ShiftStatus.IN_PROGRESS;
                     return (
                         <div 
                             key={job.id} 
                             onClick={() => handleOpenJob(job)}
-                            className={`bg-white p-6 rounded-xl shadow-sm border hover:shadow-md transition-all cursor-pointer group relative overflow-hidden ${isEnRoute ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gold-200'}`}
+                            className={`bg-white p-6 rounded-xl shadow-sm border hover:shadow-md transition-all cursor-pointer group relative overflow-hidden ${isEnRoute ? 'border-blue-300 ring-2 ring-blue-100' : isInProgress ? 'border-emerald-300 ring-2 ring-emerald-100' : 'border-gold-200'}`}
                         >
-                            <div className={`absolute top-0 left-0 w-1 h-full transition-colors ${isEnRoute ? 'bg-blue-500' : 'bg-gold-400 group-hover:bg-gold-500'}`}></div>
+                            <div className={`absolute top-0 left-0 w-1 h-full transition-colors ${isEnRoute ? 'bg-blue-500' : isInProgress ? 'bg-emerald-500' : 'bg-gold-400 group-hover:bg-gold-500'}`}></div>
                             <div className="flex justify-between items-start">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
@@ -268,6 +326,11 @@ export const TimeClock = () => {
                                                 <Navigation className="w-3 h-3 mr-1" /> EN ROUTE
                                             </span>
                                         )}
+                                        {isInProgress && (
+                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 flex items-center">
+                                                <CheckCircle2 className="w-3 h-3 mr-1" /> IN PROGRESS
+                                            </span>
+                                        )}
                                     </div>
                                     <h3 className="text-lg font-bold text-navy-900">{job.description}</h3>
                                     <a 
@@ -285,7 +348,7 @@ export const TimeClock = () => {
                                     <span className="text-xl font-black text-emerald-600">${job.price}</span>
                                     
                                     <div className="flex gap-2 mt-4">
-                                        {!isEnRoute && (
+                                        {!isEnRoute && !isInProgress && (
                                             <button 
                                                 onClick={(e) => handleStartTravel(e, job)}
                                                 className="p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 transition-colors z-10 shadow-md animate-in zoom-in"
@@ -400,7 +463,15 @@ export const TimeClock = () => {
                    </div>
 
                    {/* Add Chat Button inside Modal */}
-                   <div className="mb-6 flex justify-end">
+                   <div className="mb-6 flex justify-end gap-3">
+                       {users.find(u => u.id === selectedJob.clientId)?.phone && (
+                           <a 
+                               href={`tel:${users.find(u => u.id === selectedJob.clientId)?.phone}`}
+                               className="text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-lg flex items-center transition-colors border border-emerald-200"
+                           >
+                               <Phone className="w-4 h-4 mr-2" /> {users.find(u => u.id === selectedJob.clientId)?.phone}
+                           </a>
+                       )}
                        <button 
                             onClick={(e) => handleChatClick(e, selectedJob)}
                             className="text-xs font-bold text-navy-600 bg-navy-50 hover:bg-navy-100 px-4 py-2 rounded-lg flex items-center transition-colors"
@@ -447,137 +518,195 @@ export const TimeClock = () => {
                        </div>
                    )}
 
-                   {/* Attached Photos Viewer (Initial Job Photos) */}
-                   {selectedJob.photos && selectedJob.photos.length > 0 && (
+                   {/* Check-In UI */}
+                   {isCheckIn ? (
                        <div className="mb-6">
-                           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center">
-                               <ImageIcon className="w-4 h-4 mr-1" /> Initial Site Photos
-                           </h3>
-                           <div className="flex gap-3 overflow-x-auto pb-2">
-                               {selectedJob.photos.map((photo, i) => (
-                                   <div key={i} className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shrink-0 shadow-sm">
-                                       <img src={photo} alt={`Job site ${i}`} className="w-full h-full object-cover" />
-                                   </div>
-                               ))}
-                           </div>
-                       </div>
-                   )}
+                           <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6">
+                               <label className="block text-sm font-bold text-blue-900 mb-2 flex items-center">
+                                   <MapPin className="w-4 h-4 mr-2" /> Check In at Site
+                               </label>
+                               <p className="text-xs text-blue-700 mb-4">
+                                   Please confirm you have arrived at the job site. We will capture your GPS location.
+                               </p>
 
-                   <div className="bg-gold-50 p-4 rounded-xl border border-gold-200 mb-6 transition-all">
-                       <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm font-bold text-navy-900">Final Payout ($)</span>
-                           <input 
-                               type="number" 
-                               value={finalPrice}
-                               onChange={(e) => setFinalPrice(parseFloat(e.target.value) || 0)}
-                               className="w-32 p-2 bg-white border border-gold-300 rounded-lg text-right font-black text-xl outline-none focus:ring-2 focus:ring-gold-400 text-navy-900"
-                           />
-                       </div>
-                       
-                       <div className="text-xs text-slate-500 mb-2">
-                           Original Estimate: ${selectedJob.price || 0}
-                       </div>
-
-                       {/* Price Change Reason Input */}
-                       {finalPrice !== (selectedJob.price || 0) && (
-                           <div className="mt-3 pt-3 border-t border-gold-200 animate-in slide-in-from-top-2">
-                               <div className="flex items-start gap-2 mb-2">
-                                   <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5" />
-                                   <span className="text-xs font-bold text-amber-700">Price changed. Please explain why:</span>
-                                </div>
-                               <textarea 
-                                   placeholder="e.g. Required extra materials ($40) and took 1 hour longer than expected..."
-                                   className="w-full p-3 bg-white border border-gold-300 rounded-lg text-sm focus:ring-2 focus:ring-gold-400 outline-none"
-                                   rows={2}
-                                   value={priceChangeReason}
-                                   onChange={(e) => setPriceChangeReason(e.target.value)}
-                               />
-                           </div>
-                       )}
-                       
-                       <div className="text-xs text-slate-500 mt-2 pt-2 border-t border-gold-200/50 flex items-center">
-                           <span className="font-bold mr-1">Site:</span>
-                           <a 
-                               href={`https://maps.google.com/?q=${encodeURIComponent(sites.find(s => s.id === selectedJob.siteId)?.address || '')}`}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               className="text-blue-600 hover:underline"
-                           >
-                               {sites.find(s => s.id === selectedJob.siteId)?.address}
-                           </a>
-                       </div>
-                   </div>
-
-                   {/* Completion Photos Upload */}
-                   <div className="mb-6">
-                       <label className="block text-sm font-bold text-navy-900 mb-2">Proof of Work (Completion Photos) <span className="text-red-500">*</span></label>
-                       <div className="flex flex-wrap gap-3">
-                           {completionImages.map((img, idx) => (
-                               <div key={idx} className="w-20 h-20 relative rounded-xl overflow-hidden border border-slate-200 shadow-sm group">
-                                   <img src={img} alt="Completion proof" className="w-full h-full object-cover" />
-                                   <button 
-                                     onClick={() => removeImage(idx, 'COMPLETION')}
-                                     className="absolute top-1 right-1 p-1 bg-white/80 rounded-full text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                   >
-                                       <X className="w-3 h-3" />
-                                   </button>
+                               <label className="block text-xs font-bold text-blue-800 mb-2">
+                                   Arrival Photos (Recommended)
+                               </label>
+                               <div className="flex flex-wrap gap-3 mb-2">
+                                   {arrivalImages.map((img, idx) => (
+                                       <div key={idx} className="w-20 h-20 relative rounded-xl overflow-hidden border border-blue-200 shadow-sm group">
+                                           <img src={img} alt="Arrival" className="w-full h-full object-cover" />
+                                           <button 
+                                             onClick={() => removeImage(idx, 'ARRIVAL')}
+                                             className="absolute top-1 right-1 p-1 bg-white/80 rounded-full text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                           >
+                                               <X className="w-3 h-3" />
+                                           </button>
+                                       </div>
+                                   ))}
+                                   
+                                   <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-100 transition-colors text-blue-400 hover:text-blue-600">
+                                       <Camera className="w-6 h-6 mb-1" />
+                                       <span className="text-[10px] font-bold">Add</span>
+                                       <input 
+                                         type="file" 
+                                         accept="image/*" 
+                                         multiple 
+                                         className="hidden" 
+                                         onChange={(e) => handleImageUpload(e, 'ARRIVAL')}
+                                       />
+                                   </label>
                                </div>
-                           ))}
-                           
-                           <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-gold-400 hover:bg-gold-50 transition-colors text-slate-400 hover:text-gold-600">
-                               <Camera className="w-6 h-6 mb-1" />
-                               <span className="text-[10px] font-bold">Add</span>
-                               <input 
-                                 type="file" 
-                                 accept="image/*" 
-                                 multiple 
-                                 className="hidden" 
-                                 onChange={(e) => handleImageUpload(e, 'COMPLETION')}
-                               />
-                           </label>
-                       </div>
-                       {completionImages.length === 0 && (
-                           <p className="text-xs text-amber-600 mt-2 font-medium flex items-center">
-                               <AlertCircle className="w-3 h-3 mr-1" /> Mandatory: Upload at least one photo.
-                           </p>
-                       )}
-                   </div>
+                               <p className="text-[10px] text-blue-600 italic">
+                                   Uploading a photo of the site upon arrival helps document the initial condition.
+                               </p>
+                           </div>
 
-                   <div className="space-y-4">
-                       <label className="block text-sm font-bold text-navy-900">
-                           Job Notes / Feedback
-                           <span className="text-slate-400 font-normal ml-2">(Optional)</span>
-                       </label>
-                       <textarea 
-                           className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold-400 outline-none resize-none h-32"
-                           placeholder="Describe work done or any issues encountered..."
-                           value={feedback}
-                           onChange={e => setFeedback(e.target.value)}
-                       />
-                       
-                       {/* GPS Warning Box */}
-                       <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 flex items-start text-xs text-amber-800 shadow-sm">
-                           <MapPin className="w-4 h-4 mr-2 shrink-0 mt-0.5 text-amber-600" />
-                           <p><strong>GPS Verification Required:</strong> Please mark this job complete while physically at the job site. We capture your location at the moment of completion to verify service delivery and avoid potential disputes.</p>
+                           <button 
+                               onClick={handleCheckIn}
+                               disabled={isSubmitting}
+                               className="w-full py-4 text-white text-lg font-bold rounded-xl shadow-lg transition-all flex items-center justify-center bg-blue-600 hover:bg-blue-700 shadow-blue-200"
+                           >
+                               {isSubmitting ? 'Checking In...' : (
+                                   <><MapPin className="w-6 h-6 mr-2" /> Confirm Arrival & Check In</>
+                               )}
+                           </button>
                        </div>
-
-                       <button 
-                           onClick={handleCompleteJob}
-                           disabled={isSubmitting || isCompleteDisabled}
-                           className={`w-full py-4 text-white text-lg font-bold rounded-xl shadow-lg transition-all flex items-center justify-center ${isCompleteDisabled ? 'bg-slate-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'}`}
-                           title={isCompleteDisabled ? "Photos required before completion" : "Complete Job"}
-                       >
-                           {isSubmitting ? 'Verifying Location...' : (
-                               isCompleteDisabled ? (
-                                   selectedJob?.hasHighValueItems && preWorkImages.length === 0 ? 
-                                   <><Lock className="w-5 h-5 mr-2" /> Upload Proof of Condition</> :
-                                   <><Camera className="w-5 h-5 mr-2" /> Upload Proof of Work</>
-                               ) : (
-                                   <><CheckCircle2 className="w-6 h-6 mr-2" /> Mark Job Complete</>
-                               )
+                   ) : (
+                       <>
+                           {/* Attached Photos Viewer (Initial Job Photos) */}
+                           {selectedJob.photos && selectedJob.photos.length > 0 && (
+                               <div className="mb-6">
+                                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center">
+                                       <ImageIcon className="w-4 h-4 mr-1" /> Initial Site Photos
+                                   </h3>
+                                   <div className="flex gap-3 overflow-x-auto pb-2">
+                                       {selectedJob.photos.map((photo, i) => (
+                                           <div key={i} className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shrink-0 shadow-sm">
+                                               <img src={photo} alt={`Job site ${i}`} className="w-full h-full object-cover" />
+                                           </div>
+                                       ))}
+                                   </div>
+                               </div>
                            )}
-                       </button>
-                   </div>
+
+                           <div className="bg-gold-50 p-4 rounded-xl border border-gold-200 mb-6 transition-all">
+                               <div className="flex justify-between items-center mb-2">
+                                   <span className="text-sm font-bold text-navy-900">Final Payout ($)</span>
+                                   <input 
+                                       type="number" 
+                                       value={finalPrice}
+                                       onChange={(e) => setFinalPrice(parseFloat(e.target.value) || 0)}
+                                       className="w-32 p-2 bg-white border border-gold-300 rounded-lg text-right font-black text-xl outline-none focus:ring-2 focus:ring-gold-400 text-navy-900"
+                                   />
+                               </div>
+                               
+                               <div className="text-xs text-slate-500 mb-2">
+                                   Original Estimate: ${selectedJob.price || 0}
+                               </div>
+
+                               {/* Price Change Reason Input */}
+                               {finalPrice !== (selectedJob.price || 0) && (
+                                   <div className="mt-3 pt-3 border-t border-gold-200 animate-in slide-in-from-top-2">
+                                       <div className="flex items-start gap-2 mb-2">
+                                           <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5" />
+                                           <span className="text-xs font-bold text-amber-700">Price changed. Please explain why:</span>
+                                        </div>
+                                       <textarea 
+                                           placeholder="e.g. Required extra materials ($40) and took 1 hour longer than expected..."
+                                           className="w-full p-3 bg-white border border-gold-300 rounded-lg text-sm focus:ring-2 focus:ring-gold-400 outline-none"
+                                           rows={2}
+                                           value={priceChangeReason}
+                                           onChange={(e) => setPriceChangeReason(e.target.value)}
+                                       />
+                                   </div>
+                               )}
+                               
+                               <div className="text-xs text-slate-500 mt-2 pt-2 border-t border-gold-200/50 flex items-center">
+                                   <span className="font-bold mr-1">Site:</span>
+                                   <a 
+                                       href={`https://maps.google.com/?q=${encodeURIComponent(sites.find(s => s.id === selectedJob.siteId)?.address || '')}`}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className="text-blue-600 hover:underline"
+                                   >
+                                       {sites.find(s => s.id === selectedJob.siteId)?.address}
+                                   </a>
+                               </div>
+                           </div>
+
+                           {/* Completion Photos Upload */}
+                           <div className="mb-6">
+                               <label className="block text-sm font-bold text-navy-900 mb-2">Proof of Work (Completion Photos) <span className="text-red-500">*</span></label>
+                               <div className="flex flex-wrap gap-3">
+                                   {completionImages.map((img, idx) => (
+                                       <div key={idx} className="w-20 h-20 relative rounded-xl overflow-hidden border border-slate-200 shadow-sm group">
+                                           <img src={img} alt="Completion proof" className="w-full h-full object-cover" />
+                                           <button 
+                                             onClick={() => removeImage(idx, 'COMPLETION')}
+                                             className="absolute top-1 right-1 p-1 bg-white/80 rounded-full text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                           >
+                                               <X className="w-3 h-3" />
+                                           </button>
+                                       </div>
+                                   ))}
+                                   
+                                   <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-gold-400 hover:bg-gold-50 transition-colors text-slate-400 hover:text-gold-600">
+                                       <Camera className="w-6 h-6 mb-1" />
+                                       <span className="text-[10px] font-bold">Add</span>
+                                       <input 
+                                         type="file" 
+                                         accept="image/*" 
+                                         multiple 
+                                         className="hidden" 
+                                         onChange={(e) => handleImageUpload(e, 'COMPLETION')}
+                                       />
+                                   </label>
+                               </div>
+                               {completionImages.length === 0 && (
+                                   <p className="text-xs text-amber-600 mt-2 font-medium flex items-center">
+                                       <AlertCircle className="w-3 h-3 mr-1" /> Mandatory: Upload at least one photo.
+                                   </p>
+                               )}
+                           </div>
+
+                           <div className="space-y-4">
+                               <label className="block text-sm font-bold text-navy-900">
+                                   Job Notes / Feedback
+                                   <span className="text-slate-400 font-normal ml-2">(Optional)</span>
+                               </label>
+                               <textarea 
+                                   className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold-400 outline-none resize-none h-32"
+                                   placeholder="Describe work done or any issues encountered..."
+                                   value={feedback}
+                                   onChange={e => setFeedback(e.target.value)}
+                               />
+                               
+                               {/* GPS Warning Box */}
+                               <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 flex items-start text-xs text-amber-800 shadow-sm">
+                                   <MapPin className="w-4 h-4 mr-2 shrink-0 mt-0.5 text-amber-600" />
+                                   <p><strong>GPS Verification Required:</strong> Please mark this job complete while physically at the job site. We capture your location at the moment of completion to verify service delivery and avoid potential disputes.</p>
+                               </div>
+
+                               <button 
+                                   onClick={handleCompleteJob}
+                                   disabled={isSubmitting || isCompleteDisabled}
+                                   className={`w-full py-4 text-white text-lg font-bold rounded-xl shadow-lg transition-all flex items-center justify-center ${isCompleteDisabled ? 'bg-slate-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'}`}
+                                   title={isCompleteDisabled ? "Photos required before completion" : "Complete Job"}
+                               >
+                                   {isSubmitting ? 'Verifying Location...' : (
+                                       isCompleteDisabled ? (
+                                           selectedJob?.hasHighValueItems && preWorkImages.length === 0 ? 
+                                           <><Lock className="w-5 h-5 mr-2" /> Upload Proof of Condition</> :
+                                           <><Camera className="w-5 h-5 mr-2" /> Upload Proof of Work</>
+                                       ) : (
+                                           <><CheckCircle2 className="w-6 h-6 mr-2" /> Mark Job Complete</>
+                                       )
+                                   )}
+                               </button>
+                           </div>
+                       </>
+                   )}
                </div>
            </div>
        )}

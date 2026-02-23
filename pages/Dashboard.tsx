@@ -70,7 +70,6 @@ const SERVICE_TILES = [
     { id: 'JOBSITE_LABOR', title: 'Job Site Labor', icon: HardHat, color: 'text-slate-700' },
     { id: 'AUTO', title: 'Auto Help', icon: Car, color: 'text-red-500' },
     { id: 'COMPUTER', title: 'Computer Repair', icon: Monitor, color: 'text-cyan-500' },
-    { id: 'OTHER', title: 'Other', icon: Zap, color: 'text-purple-600' },
 ] as const;
 
 export const Dashboard = () => {

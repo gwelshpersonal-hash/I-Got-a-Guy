@@ -6,7 +6,7 @@ import { addDays, setHours, subDays, addHours, subHours } from 'date-fns';
 export const APP_LOGO_URL = "https://placehold.co/600x200/1e3a8a/ffd01f?text=I+Got+A+Guy!&font=roboto";
 
 export const ALL_SERVICE_CATEGORIES: ServiceCategory[] = [
-    'LANDSCAPING', 'MOVING', 'CLEANING', 'HANDYMAN', 'PLUMBING', 'AUTO', 'CONSTRUCTION', 'COMPUTER', 'GENERAL_LABOR', 'JOBSITE_LABOR', 'POWER_WASHING', 'OTHER'
+    'LANDSCAPING', 'MOVING', 'CLEANING', 'HANDYMAN', 'PLUMBING', 'AUTO', 'CONSTRUCTION', 'COMPUTER', 'GENERAL_LABOR', 'JOBSITE_LABOR', 'POWER_WASHING'
 ];
 
 export const SERVICE_CATEGORIES = {
@@ -20,8 +20,7 @@ export const SERVICE_CATEGORIES = {
   CONSTRUCTION:  { risk: 'HIGH',   fee: 12.00 },
   AUTO:          { risk: 'HIGH',   fee: 12.00 },
   JOBSITE_LABOR: { risk: 'HIGH',   fee: 12.00 },
-  POWER_WASHING: { risk: 'HIGH',   fee: 12.00 },
-  OTHER:         { risk: 'LOW',    fee: 3.00 }
+  POWER_WASHING: { risk: 'HIGH',   fee: 12.00 }
 };
 
 export const PLATFORM_COMMISSION = 0.15; // 15%
@@ -51,8 +50,7 @@ export const CATEGORY_RISK_MAPPING: Record<ServiceCategory, { risk: keyof typeof
   GENERAL_LABOR: { risk: RISK_LEVELS.MEDIUM },
   LANDSCAPING: { risk: RISK_LEVELS.MEDIUM },
   CLEANING: { risk: RISK_LEVELS.LOW },
-  COMPUTER: { risk: RISK_LEVELS.LOW },
-  OTHER: { risk: RISK_LEVELS.LOW },
+  COMPUTER: { risk: RISK_LEVELS.LOW }
 };
 
 

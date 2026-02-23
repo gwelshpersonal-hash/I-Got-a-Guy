@@ -62,6 +62,7 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+// Force rebuild
 const STORAGE_KEY_SHIFTS = 'iw_shifts';
 const STORAGE_KEY_USERS = 'iw_users';
 const STORAGE_KEY_REF_ENABLED = 'iw_referral_enabled';
@@ -173,7 +174,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const saved = localStorage.getItem(STORAGE_KEY_USERS);
       if (saved) {
           try {
-              return JSON.parse(saved);
+              const parsed = JSON.parse(saved);
+              return Array.isArray(parsed) ? parsed : MOCK_USERS;
           } catch (e) {
               return MOCK_USERS;
           }
