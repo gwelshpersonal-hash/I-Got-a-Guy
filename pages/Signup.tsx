@@ -21,6 +21,7 @@ export const Signup = () => {
         email: '',
         password: '', 
         phone: '',
+        address: '',
         // Provider specific
         skills: [] as ServiceCategory[],
         insuranceType: 'DAILY_SHIELD' as 'OWN_COI' | 'DAILY_SHIELD' | undefined,
@@ -92,6 +93,9 @@ export const Signup = () => {
                 
                 hourlyRate: isProvider ? 35 : 0, 
                 phone: formData.phone,
+                address: formData.address,
+                latitude: 37.7749 + (Math.random() - 0.5) * 0.1, // Mock geocoding
+                longitude: -122.4194 + (Math.random() - 0.5) * 0.1, // Mock geocoding
                 urgentAlertsEnabled: true,
                 skills: isProvider ? formData.skills : undefined,
                 
@@ -203,6 +207,18 @@ export const Signup = () => {
                                 placeholder="(555) 555-5555"
                                 value={formData.phone}
                                 onChange={e => setFormData({...formData, phone: e.target.value})}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-navy-900 mb-1">Address</label>
+                            <input 
+                                type="text"
+                                required
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold-400 focus:border-transparent outline-none transition-all font-medium text-navy-900"
+                                placeholder="123 Main St, City, State"
+                                value={formData.address}
+                                onChange={e => setFormData({...formData, address: e.target.value})}
                             />
                         </div>
 

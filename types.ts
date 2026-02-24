@@ -90,6 +90,11 @@ export interface User {
   // Preferences
   urgentAlertsEnabled?: boolean;
 
+  // Location
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+
   // Insurance
   insuranceType?: 'OWN_COI' | 'DAILY_SHIELD';
   coiUrl?: string; // URL/Base64 of the uploaded certificate

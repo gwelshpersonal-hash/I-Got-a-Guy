@@ -3,11 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { Shift, ShiftStatus, Role } from '../types';
 import { format, isSameDay, addDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, X, Star, Loader2, ShieldCheck, AlertCircle, ImageIcon, Camera, MessageCircle, Navigation } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, X, Star, Loader2, ShieldCheck, AlertCircle, ImageIcon, Camera, MessageCircle, Navigation, Scale } from 'lucide-react';
 
 export const Schedule = () => {
     const { currentUser } = useAuth();
-    const { shifts, updateShift, sites, verifyJob, users } = useData();
+    const { shifts, updateShift, sites, verifyJob, users, claimGig } = useData();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
 
@@ -27,7 +27,7 @@ export const Schedule = () => {
     const filteredShifts = shifts.filter(s => {
         if (isAdmin) return true;
         if (isClient) return s.clientId === currentUser?.id;
-        if (isProvider) return s.userId === currentUser?.id;
+        if (isProvider) return s.userId === currentUser?.id || s.clientId === currentUser?.id;
         return false;
     });
 
@@ -75,6 +75,63 @@ export const Schedule = () => {
         });
         alert("Dispute filed. Admin will review.");
         setSelectedShift(null);
+    };
+
+    const handleAcceptCounter = async (offerId: string) => {
+        if (!selectedShift || !currentUser) return;
+        
+        const offer = selectedShift.counterOffers?.find(o => o.id === offerId);
+        if (!offer) return;
+
+        try {
+            // In a real app, this would use the platform config for fees
+            const platformFeePercent = 0.20;
+            const winningProvider = users.find(u => u.id === offer.providerId);
+            const shouldDeduct = winningProvider ? (winningProvider.insuranceType === 'DAILY_SHIELD' || (winningProvider.insuranceType === 'OWN_COI' && !winningProvider.isCoiVerified)) : false;
+            
+            let insuranceFee = 0;
+            if (shouldDeduct) {
+                insuranceFee = 2.00; // Flat fee fallback
+            }
+
+            await claimGig(selectedShift.id, offer.providerId, {
+                insuranceOptIn: shouldDeduct,
+                estimatedInsuranceFee: insuranceFee,
+                platformFeePercent: platformFeePercent
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            updateShift({
+                ...selectedShift,
+                userId: offer.providerId,
+                price: offer.amount, 
+                status: ShiftStatus.ACCEPTED,
+                insuranceOptIn: shouldDeduct,
+                appliedInsuranceFee: insuranceFee,
+                appliedPlatformFee: platformFeePercent,
+                escrowStatus: 'SECURED', 
+                counterOffers: selectedShift.counterOffers?.map(o => 
+                    o.id === offer.id ? { ...o, status: 'ACCEPTED' } : { ...o, status: 'REJECTED' }
+                )
+            });
+
+            alert("Offer accepted! Funds secured and provider assigned.");
+            setSelectedShift(null);
+        } catch (error: any) {
+            alert(`Payment Failed: ${error.message}`);
+        }
+    };
+
+    const handleDeclineCounter = async (offerId: string) => {
+        if (!selectedShift || !currentUser) return;
+
+        updateShift({
+            ...selectedShift,
+            counterOffers: selectedShift.counterOffers?.map(o => 
+                o.id === offerId ? { ...o, status: 'REJECTED' } : o
+            )
+        });
     };
 
     return (
@@ -132,13 +189,17 @@ export const Schedule = () => {
                         const site = sites.find(s => s.id === shift.siteId);
                         const isCompleted = shift.status === ShiftStatus.COMPLETED;
                         const isVerified = shift.status === ShiftStatus.VERIFIED;
+                        const pendingOffers = shift.counterOffers?.filter(o => o.status === 'PENDING') || [];
+                        const hasPendingOffers = pendingOffers.length > 0;
                         
                         // Dynamic Styles for Completed Jobs
                         const cardClasses = isCompleted 
                             ? "bg-emerald-50/60 p-5 rounded-2xl shadow-md border-2 border-emerald-400 hover:shadow-lg transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden" 
                             : isVerified 
                                 ? "bg-slate-50 p-5 rounded-2xl shadow-sm border border-slate-200 opacity-80 hover:opacity-100 transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-                                : "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4";
+                                : hasPendingOffers
+                                    ? "bg-indigo-50 p-5 rounded-2xl shadow-sm border border-indigo-200 hover:shadow-md transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                                    : "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4";
 
                         return (
                             <div 
@@ -175,6 +236,7 @@ export const Schedule = () => {
                                     }`}>
                                         {shift.status.replace('_', ' ')}
                                     </span>
+                                    {hasPendingOffers && <span className="text-[10px] font-bold bg-indigo-600 text-white px-2 py-0.5 rounded-full animate-pulse flex items-center"><Scale className="w-3 h-3 mr-1" /> COUNTER OFFER</span>}
                                     {shift.price && <span className="font-black text-navy-900">${shift.price}</span>}
                                     {isCompleted && isClient && <span className="text-xs font-bold text-emerald-600 animate-pulse">Verify Now &rarr;</span>}
                                 </div>
@@ -315,6 +377,58 @@ export const Schedule = () => {
                                             <MapPin className="w-4 h-4 mr-1" />
                                             {sites.find(s => s.id === selectedShift.siteId)?.address || 'Unknown Address'}
                                         </a>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Client Counter Offers View */}
+                            {isClient && selectedShift.status === ShiftStatus.OPEN_REQUEST && selectedShift.counterOffers && selectedShift.counterOffers.length > 0 && (
+                                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                                    <h3 className="font-bold text-indigo-900 mb-4 flex items-center">
+                                        <Scale className="w-5 h-5 mr-2" /> Pending Counter Offers
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {selectedShift.counterOffers.filter(o => o.status === 'PENDING').map(offer => {
+                                            const provider = users.find(u => u.id === offer.providerId);
+                                            return (
+                                                <div key={offer.id} className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                                                {provider?.name.charAt(0)}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-sm text-navy-900">{provider?.name}</div>
+                                                                <div className="text-xs text-slate-500 flex items-center">
+                                                                    <Star className="w-3 h-3 text-gold-400 mr-1 fill-current" /> {provider?.rating}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="text-lg font-black text-emerald-600">${offer.amount}</div>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-sm text-slate-600 italic mb-3 bg-slate-50 p-2 rounded">"{offer.message}"</p>
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            onClick={() => handleDeclineCounter(offer.id)}
+                                                            className="flex-1 py-2 bg-white border border-slate-200 text-slate-500 font-bold rounded-lg hover:bg-slate-50 transition-colors text-sm"
+                                                        >
+                                                            Decline
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleAcceptCounter(offer.id)}
+                                                            className="flex-1 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                                                        >
+                                                            Accept Offer
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {selectedShift.counterOffers.filter(o => o.status === 'PENDING').length === 0 && (
+                                            <p className="text-sm text-slate-500 italic">No pending offers.</p>
+                                        )}
                                     </div>
                                 </div>
                             )}

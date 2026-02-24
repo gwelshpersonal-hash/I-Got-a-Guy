@@ -26,6 +26,7 @@ export const AccountProfile = () => {
                 name: currentUser.name,
                 email: currentUser.email,
                 phone: currentUser.phone,
+                address: currentUser.address,
                 urgentAlertsEnabled: currentUser.urgentAlertsEnabled,
                 companyName: currentUser.companyName,
                 profileImage: currentUser.profileImage,
@@ -192,6 +193,12 @@ export const AccountProfile = () => {
             ...formData,
         } as User;
 
+        // Mock geocoding if address changed
+        if (formData.address && formData.address !== currentUser.address) {
+            updatedUser.latitude = 37.7749 + (Math.random() - 0.5) * 0.1;
+            updatedUser.longitude = -122.4194 + (Math.random() - 0.5) * 0.1;
+        }
+
         // Auto-update verification logic if Insurance changed
         if (formData.insuranceType === 'DAILY_SHIELD' && currentUser.insuranceType !== 'DAILY_SHIELD') {
             // User opted INTO Daily Shield -> Authorized immediately
@@ -331,6 +338,16 @@ export const AccountProfile = () => {
                                     onChange={e => setFormData({...formData, phone: e.target.value})}
                                 />
                             </div>
+                        </div>
+                        <div className="col-span-1 md:col-span-2">
+                            <label className="block text-sm font-bold text-slate-700 mb-2">Address</label>
+                            <input 
+                                type="text" 
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-navy-100 focus:border-navy-500 outline-none transition-all font-medium text-navy-900"
+                                placeholder="123 Main St, City, State"
+                                value={formData.address || ''}
+                                onChange={e => setFormData({...formData, address: e.target.value})}
+                            />
                         </div>
                     </div>
                 </div>
