@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { name: 'Find Work', path: '/', icon: Search, roles: [Role.PROVIDER] },
   { name: 'My Schedule', path: '/schedule', icon: Calendar, roles: [Role.PROVIDER] },
   { name: 'On The Job', path: '/time-clock', icon: Clock, roles: [Role.PROVIDER] },
+  { name: 'Staffing', path: '/staffing', icon: Users, roles: [Role.PROVIDER] },
   { name: 'Earnings', path: '/payroll', icon: DollarSign, roles: [Role.PROVIDER] },
   { name: 'Tax Center', path: '/taxes', icon: FileText, roles: [Role.PROVIDER] },
 

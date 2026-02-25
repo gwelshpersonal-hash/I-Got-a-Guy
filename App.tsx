@@ -17,6 +17,7 @@ import { Referrals } from './pages/Referrals';
 import { PriceGuide } from './pages/PriceGuide';
 import { AccountProfile } from './pages/AccountProfile';
 import { TaxCenter } from './pages/TaxCenter';
+import { ProviderStaffing } from './pages/ProviderStaffing';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 
@@ -45,6 +46,7 @@ const App = () => {
               <Route path="/pricing" element={<PriceGuide />} />
               <Route path="/profile" element={<AccountProfile />} />
               <Route path="/taxes" element={<TaxCenter />} />
+              <Route path="/staffing" element={<ProviderStaffing />} />
               
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

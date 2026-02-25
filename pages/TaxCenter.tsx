@@ -28,7 +28,7 @@ export const TaxCenter = () => {
         });
     }, [shifts, currentUser, selectedYear]);
 
-    const yearlyExpenses = useMemo(() => {
+    const staffingExpenses = useMemo(() => {
         if (!currentUser) return [];
         return shifts.filter(s => {
             const dateToCheck = s.completedAt ? new Date(s.completedAt) : s.end;
@@ -88,29 +88,14 @@ export const TaxCenter = () => {
 
         const totalNet = totalGross - totalPlatformFees - totalInsuranceFees;
 
-        let totalExpenses = 0;
-        const expensesBreakdown: Record<string, { amount: number, count: number }> = {};
-        yearlyExpenses.forEach(shift => {
-            const amount = shift.price || 0;
-            totalExpenses += amount;
-            
-            if (!expensesBreakdown[shift.category]) {
-                expensesBreakdown[shift.category] = { amount: 0, count: 0 };
-            }
-            expensesBreakdown[shift.category].amount += amount;
-            expensesBreakdown[shift.category].count += 1;
-        });
-
         return {
             totalGross,
             totalPlatformFees,
             totalInsuranceFees,
             totalNet,
-            totalExpenses,
-            categoryBreakdown: Object.entries(categoryBreakdown).sort((a, b) => b[1].net - a[1].net), // Sort by highest net
-            expensesBreakdown: Object.entries(expensesBreakdown).sort((a, b) => b[1].amount - a[1].amount)
+            categoryBreakdown: Object.entries(categoryBreakdown).sort((a, b) => b[1].net - a[1].net) // Sort by highest net
         };
-    }, [yearlyShifts, yearlyExpenses, platformConfig]);
+    }, [yearlyShifts, platformConfig]);
 
     const isEligibleFor1099 = financials.totalNet >= 600;
 
@@ -181,7 +166,7 @@ export const TaxCenter = () => {
             </div>
 
             {/* Financial Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100">
                     <div className="flex items-center justify-between mb-4">
                         <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Gross Earnings</p>
@@ -213,17 +198,6 @@ export const TaxCenter = () => {
                     </div>
                     <p className="text-3xl font-black text-slate-700">${financials.totalInsuranceFees.toFixed(2)}</p>
                     <p className="text-xs text-slate-400 mt-1">Deductible insurance expense</p>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Subcontractor Expenses</p>
-                        <div className="p-2 bg-red-50 rounded-lg text-red-600">
-                            <Briefcase className="w-5 h-5" />
-                        </div>
-                    </div>
-                    <p className="text-3xl font-black text-slate-700">${financials.totalExpenses.toFixed(2)}</p>
-                    <p className="text-xs text-slate-400 mt-1">Deductible staffing expense</p>
                 </div>
 
                 <div className="bg-gradient-to-br from-navy-900 to-navy-800 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden">
@@ -316,97 +290,100 @@ export const TaxCenter = () => {
                 </div>
 
                 {/* Right Column: Earnings by Category */}
-                <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
-                        <div className="p-6 border-b border-slate-50">
-                            <h3 className="font-bold text-navy-900 text-lg flex items-center">
-                                <Briefcase className="w-5 h-5 mr-2 text-gold-500" /> Earnings by Category
-                            </h3>
-                            <p className="text-xs text-slate-500 mt-1">Analyze which skills generate the highest profit margin.</p>
-                        </div>
-                        
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50 border-b border-slate-100">
-                                    <tr>
-                                        <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider">Category</th>
-                                        <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Jobs</th>
-                                        <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Gross</th>
-                                        <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Net Profit</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {financials.categoryBreakdown.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
-                                                No completed jobs in {selectedYear}.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        financials.categoryBreakdown.map(([category, stats]) => (
-                                            <tr key={category} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4 font-bold text-slate-700">
-                                                    {category}
-                                                </td>
-                                                <td className="px-6 py-4 text-right text-slate-500">
-                                                    {stats.count}
-                                                </td>
-                                                <td className="px-6 py-4 text-right font-mono text-slate-500">
-                                                    ${stats.gross.toFixed(2)}
-                                                </td>
-                                                <td className="px-6 py-4 text-right font-mono font-bold text-emerald-600">
-                                                    ${stats.net.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+                    <div className="p-6 border-b border-slate-50">
+                        <h3 className="font-bold text-navy-900 text-lg flex items-center">
+                            <Briefcase className="w-5 h-5 mr-2 text-gold-500" /> Earnings by Category
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">Analyze which skills generate the highest profit margin.</p>
                     </div>
-
-                    <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
-                        <div className="p-6 border-b border-slate-50">
-                            <h3 className="font-bold text-navy-900 text-lg flex items-center">
-                                <Briefcase className="w-5 h-5 mr-2 text-red-500" /> Subcontractor Expenses
-                            </h3>
-                            <p className="text-xs text-slate-500 mt-1">Track your staffing expenses for tax deductions.</p>
-                        </div>
-                        
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50 border-b border-slate-100">
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider">Category</th>
+                                    <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Jobs</th>
+                                    <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Gross</th>
+                                    <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Net Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {financials.categoryBreakdown.length === 0 ? (
                                     <tr>
-                                        <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider">Category</th>
-                                        <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Jobs</th>
-                                        <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Amount</th>
+                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                                            No completed jobs in {selectedYear}.
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {financials.expensesBreakdown.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={3} className="px-6 py-12 text-center text-slate-400">
-                                                No subcontractor expenses in {selectedYear}.
+                                ) : (
+                                    financials.categoryBreakdown.map(([category, stats]) => (
+                                        <tr key={category} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-slate-700">
+                                                {category}
+                                            </td>
+                                            <td className="px-6 py-4 text-right text-slate-500">
+                                                {stats.count}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono text-slate-500">
+                                                ${stats.gross.toFixed(2)}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono font-bold text-emerald-600">
+                                                ${stats.net.toFixed(2)}
                                             </td>
                                         </tr>
-                                    ) : (
-                                        financials.expensesBreakdown.map(([category, stats]) => (
-                                            <tr key={category} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4 font-bold text-slate-700">
-                                                    {category}
-                                                </td>
-                                                <td className="px-6 py-4 text-right text-slate-500">
-                                                    {stats.count}
-                                                </td>
-                                                <td className="px-6 py-4 text-right font-mono font-bold text-red-600">
-                                                    ${stats.amount.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Staffing Expenses */}
+                <div className="lg:col-span-3 bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden mt-8">
+                    <div className="p-6 border-b border-slate-50">
+                        <h3 className="font-bold text-navy-900 text-lg flex items-center">
+                            <Briefcase className="w-5 h-5 mr-2 text-gold-500" /> Staffing Expenses
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">Track payments made to other providers for staffing your gigs.</p>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider">Date</th>
+                                    <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider">Category</th>
+                                    <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider">Description</th>
+                                    <th className="px-6 py-4 font-bold text-navy-900 uppercase text-xs tracking-wider text-right">Amount Paid</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {staffingExpenses.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                                            No staffing expenses in {selectedYear}.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    staffingExpenses.map((expense) => (
+                                        <tr key={expense.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-slate-700">
+                                                {format(expense.completedAt || expense.end, 'MMM d, yyyy')}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-500">
+                                                {expense.category}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-500">
+                                                {expense.description}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono font-bold text-red-600">
+                                                ${expense.price?.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
