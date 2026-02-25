@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, CheckCircle2, DollarSign, Zap, MapPin, Loader2, Bell, Truck, Sparkles, Wrench, Calendar, Car, Trash2, Lock,
-  UserPlus, Gift, Share2, Copy, X, Siren, AlertTriangle, TrendingUp, Info, Camera, Image as ImageIcon, Monitor, MessageCircle, Send, Smartphone, Rocket, Filter, ArrowUp, ArrowDown, Equal, Edit2, Milestone, Hammer, HardHat, ThumbsUp, ThumbsDown, Droplets, ShieldCheck, ShieldAlert, Scale, Star, Wallet, Waves, Briefcase, Clock, CreditCard, Radio, ChevronDown, ChevronUp
+  UserPlus, Gift, Share2, Copy, X, Siren, AlertTriangle, TrendingUp, Info, Camera, Image as ImageIcon, Monitor, MessageCircle, Send, Smartphone, Rocket, Filter, ArrowUp, ArrowDown, Equal, Edit2, Milestone, Hammer, HardHat, ThumbsUp, ThumbsDown, Droplets, ShieldCheck, ShieldAlert, Scale, Star, Wallet, Waves, Briefcase, Clock, CreditCard, Radio, ChevronDown, ChevronUp, Cpu, Bug, Code, Package
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
@@ -83,6 +83,11 @@ const SERVICE_TILES = [
     { id: 'JOBSITE_LABOR', title: 'Job Site Labor', icon: HardHat, color: 'text-slate-700' },
     { id: 'AUTO', title: 'Auto Help', icon: Car, color: 'text-red-500' },
     { id: 'COMPUTER', title: 'Computer Repair', icon: Monitor, color: 'text-cyan-500' },
+    { id: 'SMART_HOME_INSTALL', title: 'Smart Home Install', icon: Cpu, color: 'text-indigo-500' },
+    { id: 'PEST_CONTROL', title: 'Pest Control', icon: Bug, color: 'text-lime-600' },
+    { id: 'WEB_APP_DEV', title: 'Web/App Dev', icon: Code, color: 'text-blue-500' },
+    { id: 'FURNITURE_ASSEMBLY', title: 'Furniture Assembly', icon: Package, color: 'text-amber-700' },
+    { id: 'GUTTER_CLEANING', title: 'Gutter Cleaning', icon: Droplets, color: 'text-slate-600' },
 ] as const;
 
 export const Dashboard = () => {
@@ -884,23 +889,12 @@ export const Dashboard = () => {
       return { eligible, ineligible };
   }, [availableGigs, isProvider, currentUser, providerQualifications]);
 
-  const myProviderGigs = shifts.filter(s => 
-    s.userId === currentUser?.id && 
+  const myActiveGigs = shifts.filter(s => 
+    (s.userId === currentUser?.id || s.clientId === currentUser?.id) && 
     (s.status === ShiftStatus.ACCEPTED || s.status === ShiftStatus.IN_PROGRESS || s.status === ShiftStatus.OPEN_REQUEST)
   );
 
-  myProviderGigs.sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-  });
-
-  const myClientGigs = shifts.filter(s => 
-    s.clientId === currentUser?.id && 
-    (s.status === ShiftStatus.ACCEPTED || s.status === ShiftStatus.IN_PROGRESS || s.status === ShiftStatus.OPEN_REQUEST)
-  );
-
-  myClientGigs.sort((a, b) => {
+  myActiveGigs.sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return dateB - dateA;
@@ -1069,48 +1063,6 @@ export const Dashboard = () => {
       );
   };
 
-  const renderMyRequests = () => {
-      return (
-          <div className="mt-12">
-              <h2 className="text-xl font-bold text-navy-900 mb-6">{isProvider ? 'My Staffing Requests' : 'My Requests'}</h2>
-              {myClientGigs.length === 0 ? (
-                  <div className="p-10 bg-white border-2 border-dashed border-slate-200 rounded-3xl text-center text-slate-500 flex flex-col items-center"><div className="p-4 bg-slate-50 rounded-full mb-4"><Sparkles className="w-8 h-8 text-slate-300" /></div><p>You have no active requests.</p><p className="text-sm">Click a category above to get a guy!</p></div>
-              ) : (
-                  <div className="space-y-4">
-                      {myClientGigs.map(gig => {
-                          const assignedProvider = users.find(u => u.id === gig.userId);
-                          const pendingOffers = gig.counterOffers?.filter(o => o.status === 'PENDING') || [];
-                          const isBoosting = boostingGigId === gig.id;
-                          const isBoostSuccess = boostSuccessId === gig.id;
-                          const hasPendingOffers = pendingOffers.length > 0;
-                          return (
-                          <div key={gig.id} className={`p-6 rounded-2xl shadow-soft border transition-all hover:shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${hasPendingOffers ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-transparent'}`}>
-                              <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${gig.status === 'OPEN_REQUEST' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>{gig.status.replace('_', ' ')}</span>
-                                      <span className="text-xs text-slate-500 font-medium">Posted {gig.createdAt ? formatDistanceToNow(gig.createdAt) : 'recently'} ago</span>
-                                      {gig.type === 'URGENT' && <span className="text-[10px] font-bold bg-red-600 text-white px-2 py-0.5 rounded-full animate-pulse">URGENT</span>}
-                                      {hasPendingOffers && <span className="text-[10px] font-bold bg-indigo-600 text-white px-2 py-0.5 rounded-full animate-pulse flex items-center"><Scale className="w-3 h-3 mr-1" /> COUNTER OFFER</span>}
-                                  </div>
-                                  <h3 className="font-bold text-lg text-navy-900">{gig.description}</h3>
-                                  <p className="text-sm text-slate-500 mt-1 font-medium"><span className={gig.isBoosted ? "text-purple-600 font-bold" : ""}>${gig.price}</span> • {gig.category}</p>
-                              </div>
-                              <div className="text-right flex flex-col items-end gap-2 w-full md:w-auto">
-                                  {gig.userId ? (
-                                      <><div className="text-sm text-green-600 font-bold flex items-center bg-green-50 px-3 py-1.5 rounded-xl"><CheckCircle2 className="w-4 h-4 mr-2"/> Guy Assigned</div><button onClick={(e) => handleChatClick(e, gig)} className="text-xs font-bold text-navy-600 bg-navy-50 hover:bg-navy-100 px-3 py-1.5 rounded-lg flex items-center transition-colors"><MessageCircle className="w-3 h-3 mr-1" /> Message</button></>
-                                  ) : (
-                                      <div className="flex flex-col gap-2 items-end w-full"><div className="text-sm text-amber-600 font-bold flex items-center bg-amber-50 px-3 py-1.5 rounded-xl"><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Finding a Guy...</div>{pendingOffers.length > 0 && <button onClick={() => setReviewOffersGig(gig)} className="w-full md:w-auto text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-xl flex items-center justify-center shadow-md transition-all animate-pulse"><Scale className="w-3 h-3 mr-1.5" /> View {pendingOffers.length} Offer{pendingOffers.length > 1 ? 's' : ''}</button>}{gig.status === ShiftStatus.OPEN_REQUEST && <div className="flex gap-2 w-full md:w-auto"><button onClick={(e) => handleEditClick(e, gig)} className="flex-1 md:flex-none text-xs font-bold text-navy-600 bg-white border border-navy-100 hover:bg-navy-50 px-4 py-2 rounded-xl flex items-center justify-center shadow-sm transition-all"><Edit2 className="w-3 h-3 mr-1.5" /> Edit</button><button onClick={() => handleBoost(gig)} disabled={isBoosting} className={`flex-1 md:flex-none text-xs font-bold text-white px-4 py-2 rounded-xl flex items-center justify-center shadow-md transition-all ${isBoostSuccess ? 'bg-green-500' : 'bg-gradient-to-r from-purple-500 to-indigo-600'}`}>{isBoostSuccess ? 'Boosted!' : 'Boost 10%'}</button></div>}</div>
-                                  )}
-                              </div>
-                          </div>
-                          );
-                      })}
-                  </div>
-              )}
-          </div>
-      );
-  };
-
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -1170,74 +1122,97 @@ export const Dashboard = () => {
       {isClient && (
           <>
             {renderServiceGrid()}
-            {renderMyRequests()}
+            <div className="mt-12">
+                <h2 className="text-xl font-bold text-navy-900 mb-6">My Requests</h2>
+                {myActiveGigs.length === 0 ? (
+                    <div className="p-10 bg-white border-2 border-dashed border-slate-200 rounded-3xl text-center text-slate-500 flex flex-col items-center"><div className="p-4 bg-slate-50 rounded-full mb-4"><Sparkles className="w-8 h-8 text-slate-300" /></div><p>You have no active requests.</p><p className="text-sm">Click a category above to get a guy!</p></div>
+                ) : (
+                    <div className="space-y-4">
+                        {myActiveGigs.map(gig => {
+                            const assignedProvider = users.find(u => u.id === gig.userId);
+                            const pendingOffers = gig.counterOffers?.filter(o => o.status === 'PENDING') || [];
+                            const isBoosting = boostingGigId === gig.id;
+                            const isBoostSuccess = boostSuccessId === gig.id;
+                            const hasPendingOffers = pendingOffers.length > 0;
+                            return (
+                            <div key={gig.id} className={`p-6 rounded-2xl shadow-soft border transition-all hover:shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${hasPendingOffers ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-transparent'}`}>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${gig.status === 'OPEN_REQUEST' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>{gig.status.replace('_', ' ')}</span>
+                                        <span className="text-xs text-slate-500 font-medium">Posted {gig.createdAt ? formatDistanceToNow(gig.createdAt) : 'recently'} ago</span>
+                                        {gig.type === 'URGENT' && <span className="text-[10px] font-bold bg-red-600 text-white px-2 py-0.5 rounded-full animate-pulse">URGENT</span>}
+                                        {hasPendingOffers && <span className="text-[10px] font-bold bg-indigo-600 text-white px-2 py-0.5 rounded-full animate-pulse flex items-center"><Scale className="w-3 h-3 mr-1" /> COUNTER OFFER</span>}
+                                    </div>
+                                    <h3 className="font-bold text-lg text-navy-900">{gig.description}</h3>
+                                    <p className="text-sm text-slate-500 mt-1 font-medium"><span className={gig.isBoosted ? "text-purple-600 font-bold" : ""}>${gig.price}</span> • {gig.category}</p>
+                                </div>
+                                <div className="text-right flex flex-col items-end gap-2 w-full md:w-auto">
+                                    {gig.userId ? (
+                                        <><div className="text-sm text-green-600 font-bold flex items-center bg-green-50 px-3 py-1.5 rounded-xl"><CheckCircle2 className="w-4 h-4 mr-2"/> Guy Assigned</div><button onClick={(e) => handleChatClick(e, gig)} className="text-xs font-bold text-navy-600 bg-navy-50 hover:bg-navy-100 px-3 py-1.5 rounded-lg flex items-center transition-colors"><MessageCircle className="w-3 h-3 mr-1" /> Message</button></>
+                                    ) : (
+                                        <div className="flex flex-col gap-2 items-end w-full"><div className="text-sm text-amber-600 font-bold flex items-center bg-amber-50 px-3 py-1.5 rounded-xl"><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Finding a Guy...</div>{pendingOffers.length > 0 && <button onClick={() => setReviewOffersGig(gig)} className="w-full md:w-auto text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-xl flex items-center justify-center shadow-md transition-all animate-pulse"><Scale className="w-3 h-3 mr-1.5" /> View {pendingOffers.length} Offer{pendingOffers.length > 1 ? 's' : ''}</button>}{gig.status === ShiftStatus.OPEN_REQUEST && <div className="flex gap-2 w-full md:w-auto"><button onClick={(e) => handleEditClick(e, gig)} className="flex-1 md:flex-none text-xs font-bold text-navy-600 bg-white border border-navy-100 hover:bg-navy-50 px-4 py-2 rounded-xl flex items-center justify-center shadow-sm transition-all"><Edit2 className="w-3 h-3 mr-1.5" /> Edit</button><button onClick={() => handleBoost(gig)} disabled={isBoosting} className={`flex-1 md:flex-none text-xs font-bold text-white px-4 py-2 rounded-xl flex items-center justify-center shadow-md transition-all ${isBoostSuccess ? 'bg-green-500' : 'bg-gradient-to-r from-purple-500 to-indigo-600'}`}>{isBoostSuccess ? 'Boosted!' : 'Boost 10%'}</button></div>}</div>
+                                    )}
+                                </div>
+                            </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
           </>
       )}
 
       {isProvider && (
-          <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div>
-                      <div className="flex justify-between items-center mb-6">
-                          <h2 className="text-xl font-bold text-navy-900 flex items-center"><Zap className="w-5 h-5 mr-2 text-gold-500" fill="currentColor" /> Available Gigs</h2>
-                          {currentUser && <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-soft hover:shadow-md transition-all cursor-pointer"><label className="flex items-center cursor-pointer"><div className="relative"><input type="checkbox" className="sr-only" checked={currentUser.urgentAlertsEnabled} onChange={toggleUrgentAlerts} /><div className={`block w-9 h-5 rounded-full transition-colors ${currentUser.urgentAlertsEnabled ? 'bg-red-500' : 'bg-slate-300'}`}></div><div className={`dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform ${currentUser.urgentAlertsEnabled ? 'transform translate-x-4' : ''}`}></div></div><span className="ml-3 text-xs font-bold text-navy-900 uppercase tracking-wide">Emergency Texts</span></label></div>}
-                      </div>
-                      {!isVerifiedInsured && <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm"><div className="flex items-start"><ShieldCheck className="w-6 h-6 text-blue-600 mr-3 shrink-0" /><div><h3 className="text-sm font-bold text-blue-800">Verify to unlock all jobs</h3><p className="text-xs text-blue-700 mt-1">Some high-risk categories are locked until your insurance is verified.</p><button onClick={() => navigate('/profile')} className="mt-2 text-xs font-bold bg-white text-blue-600 px-3 py-1 rounded border border-blue-200 shadow-sm hover:bg-blue-50">Update Insurance</button></div></div></div>}
-                      <div className="flex flex-wrap items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                            <div className="flex items-center gap-2"><Filter className="w-4 h-4 text-slate-400" /><span className="text-xs font-bold text-slate-500 uppercase">Filters:</span></div>
-                            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as ServiceCategory | 'ALL')} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-navy-900 outline-none focus:ring-2 focus:ring-gold-400"><option value="ALL">All Categories</option>{ALL_SERVICE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select>
-                            <div className="relative"><span className="absolute left-3 top-2 text-slate-400 text-sm">$</span><input type="number" placeholder="Min Pay" value={filterMinPay ?? ''} onChange={(e) => setFilterMinPay(e.target.value ? parseFloat(e.target.value) : '')} className="w-28 pl-6 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-navy-900 outline-none focus:ring-2 focus:ring-gold-400"/></div>
-                            {(filterCategory !== 'ALL' || filterMinPay !== '') && <button onClick={() => { setFilterCategory('ALL'); setFilterMinPay(''); }} className="text-xs font-bold text-red-500 hover:text-red-700 ml-auto">Clear All</button>}
-                      </div>
-                      {!hasAuthorizedSkills && <div className="p-6 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-4 text-sm text-red-800 mb-6 shadow-sm"><Lock className="w-6 h-6 shrink-0 mt-0.5" /><div><p className="font-bold text-base">No Authorized Skills</p><p className="mt-1 opacity-90">You have not been authorized for any job categories yet.</p></div></div>}
-                      
-                      {sortedAvailableGigs.eligible.length === 0 && sortedAvailableGigs.ineligible.length === 0 ? (
-                          <div className="p-12 bg-white border-2 border-dashed border-slate-200 rounded-3xl text-center text-slate-400">No open gigs matching your filters.</div>
-                      ) : (
-                          <div className="space-y-4">
-                              {sortedAvailableGigs.eligible.map(gig => renderGigCard(gig))}
-                              {sortedAvailableGigs.ineligible.length > 0 && (
-                                  <div className="mt-8 animate-in fade-in slide-in-from-bottom-4">
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className="h-px bg-red-200 flex-1"></div>
-                                        <span className="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center bg-red-50 px-3 py-1 rounded-full border border-red-100 shadow-sm">
-                                            <Lock className="w-3 h-3 mr-2" /> Requirements Not Met
-                                        </span>
-                                        <div className="h-px bg-red-200 flex-1"></div>
-                                    </div>
-                                    <div className="opacity-75 hover:opacity-100 transition-opacity duration-300">
-                                        {sortedAvailableGigs.ineligible.map(gig => renderGigCard(gig))}
-                                    </div>
-                                  </div>
-                              )}
-                          </div>
-                      )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                  <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-bold text-navy-900 flex items-center"><Zap className="w-5 h-5 mr-2 text-gold-500" fill="currentColor" /> Available Gigs</h2>
+                      {currentUser && <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-soft hover:shadow-md transition-all cursor-pointer"><label className="flex items-center cursor-pointer"><div className="relative"><input type="checkbox" className="sr-only" checked={currentUser.urgentAlertsEnabled} onChange={toggleUrgentAlerts} /><div className={`block w-9 h-5 rounded-full transition-colors ${currentUser.urgentAlertsEnabled ? 'bg-red-500' : 'bg-slate-300'}`}></div><div className={`dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform ${currentUser.urgentAlertsEnabled ? 'transform translate-x-4' : ''}`}></div></div><span className="ml-3 text-xs font-bold text-navy-900 uppercase tracking-wide">Emergency Texts</span></label></div>}
                   </div>
+                  {!isVerifiedInsured && <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm"><div className="flex items-start"><ShieldCheck className="w-6 h-6 text-blue-600 mr-3 shrink-0" /><div><h3 className="text-sm font-bold text-blue-800">Verify to unlock all jobs</h3><p className="text-xs text-blue-700 mt-1">Some high-risk categories are locked until your insurance is verified.</p><button onClick={() => navigate('/profile')} className="mt-2 text-xs font-bold bg-white text-blue-600 px-3 py-1 rounded border border-blue-200 shadow-sm hover:bg-blue-50">Update Insurance</button></div></div></div>}
+                  <div className="flex flex-wrap items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <div className="flex items-center gap-2"><Filter className="w-4 h-4 text-slate-400" /><span className="text-xs font-bold text-slate-500 uppercase">Filters:</span></div>
+                        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as ServiceCategory | 'ALL')} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-navy-900 outline-none focus:ring-2 focus:ring-gold-400"><option value="ALL">All Categories</option>{ALL_SERVICE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select>
+                        <div className="relative"><span className="absolute left-3 top-2 text-slate-400 text-sm">$</span><input type="number" placeholder="Min Pay" value={filterMinPay ?? ''} onChange={(e) => setFilterMinPay(e.target.value ? parseFloat(e.target.value) : '')} className="w-28 pl-6 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-navy-900 outline-none focus:ring-2 focus:ring-gold-400"/></div>
+                        {(filterCategory !== 'ALL' || filterMinPay !== '') && <button onClick={() => { setFilterCategory('ALL'); setFilterMinPay(''); }} className="text-xs font-bold text-red-500 hover:text-red-700 ml-auto">Clear All</button>}
+                  </div>
+                  {!hasAuthorizedSkills && <div className="p-6 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-4 text-sm text-red-800 mb-6 shadow-sm"><Lock className="w-6 h-6 shrink-0 mt-0.5" /><div><p className="font-bold text-base">No Authorized Skills</p><p className="mt-1 opacity-90">You have not been authorized for any job categories yet.</p></div></div>}
                   
-                  <div>
-                      <h2 className="text-xl font-bold text-navy-900 mb-6">My Upcoming Schedule</h2>
-                      <div className="bg-white p-6 rounded-3xl shadow-soft border border-slate-100">
-                          {myProviderGigs.length === 0 ? <div className="text-slate-400 text-center py-8 text-sm">No claimed gigs yet.</div> : <div className="space-y-3">{myProviderGigs.map(gig => <div key={gig.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors"><div><div className="font-bold text-navy-900 text-sm">{gig.description}</div><div className="text-xs text-slate-500 mt-0.5">{format(gig.start, 'MMM d, h:mm a')}</div></div><div className="flex flex-col items-end gap-1"><span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full uppercase tracking-wider">{gig.status}</span><button onClick={(e) => handleChatClick(e, gig)} className="text-[10px] font-bold text-navy-600 hover:text-navy-800 flex items-center"><MessageCircle className="w-3 h-3 mr-1" /> Message Client</button></div></div>)}</div>}
-                          <button onClick={() => navigate('/schedule')} className="w-full mt-6 py-3 border-2 border-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-200 transition-all text-sm">View Full Calendar</button>
+                  {sortedAvailableGigs.eligible.length === 0 && sortedAvailableGigs.ineligible.length === 0 ? (
+                      <div className="p-12 bg-white border-2 border-dashed border-slate-200 rounded-3xl text-center text-slate-400">No open gigs matching your filters.</div>
+                  ) : (
+                      <div className="space-y-4">
+                          {sortedAvailableGigs.eligible.map(gig => renderGigCard(gig))}
+                          {sortedAvailableGigs.ineligible.length > 0 && (
+                              <div className="mt-8 animate-in fade-in slide-in-from-bottom-4">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-px bg-red-200 flex-1"></div>
+                                    <span className="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center bg-red-50 px-3 py-1 rounded-full border border-red-100 shadow-sm">
+                                        <Lock className="w-3 h-3 mr-2" /> Requirements Not Met
+                                    </span>
+                                    <div className="h-px bg-red-200 flex-1"></div>
+                                </div>
+                                <div className="opacity-75 hover:opacity-100 transition-opacity duration-300">
+                                    {sortedAvailableGigs.ineligible.map(gig => renderGigCard(gig))}
+                                </div>
+                              </div>
+                          )}
                       </div>
-                      <div className="mt-8 space-y-6">
-                          <div className="bg-gradient-to-br from-navy-900 to-navy-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden"><div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/10 rounded-full -mr-10 -mt-10 blur-2xl"></div><div className="relative z-10"><h3 className="font-bold text-gold-400 text-lg mb-1 uppercase tracking-wider text-xs">Total Earnings</h3><div className="text-5xl font-black mb-6 tracking-tight">${totalEarnings.toFixed(2)}</div><div className="flex gap-3"><button onClick={() => navigate('/payroll')} className="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl text-sm font-bold transition-all backdrop-blur-sm border border-white/10">View Details</button></div></div></div>
-                          {isReferralEnabled && <div className="bg-white rounded-3xl p-6 shadow-soft border border-slate-100 flex items-center justify-between hover:shadow-lg transition-all"><div><h3 className="font-bold text-navy-900 flex items-center mb-1"><UserPlus className="w-5 h-5 mr-2 text-gold-500" /> Refer a Pro</h3><p className="text-xs text-slate-500 max-w-[200px] leading-relaxed">Earn $50 for every skilled pro you bring to the crew.</p></div><button onClick={() => openReferralModal('PROVIDER')} className="p-4 bg-navy-50 text-navy-600 rounded-2xl hover:bg-navy-100 hover:text-navy-700 transition-colors shadow-sm" title="Share Referral Link"><Share2 className="w-5 h-5" /></button></div>}
-                      </div>
+                  )}
+              </div>
+              
+              <div>
+                  <h2 className="text-xl font-bold text-navy-900 mb-6">My Upcoming Schedule</h2>
+                  <div className="bg-white p-6 rounded-3xl shadow-soft border border-slate-100">
+                      {myActiveGigs.length === 0 ? <div className="text-slate-400 text-center py-8 text-sm">No claimed gigs yet.</div> : <div className="space-y-3">{myActiveGigs.map(gig => <div key={gig.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors"><div><div className="font-bold text-navy-900 text-sm">{gig.description}</div><div className="text-xs text-slate-500 mt-0.5">{format(gig.start, 'MMM d, h:mm a')}</div></div><div className="flex flex-col items-end gap-1"><span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full uppercase tracking-wider">{gig.status}</span><button onClick={(e) => handleChatClick(e, gig)} className="text-[10px] font-bold text-navy-600 hover:text-navy-800 flex items-center"><MessageCircle className="w-3 h-3 mr-1" /> Message Client</button></div></div>)}</div>}
+                      <button onClick={() => navigate('/schedule')} className="w-full mt-6 py-3 border-2 border-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-200 transition-all text-sm">View Full Calendar</button>
+                  </div>
+                  <div className="mt-8 space-y-6">
+                      <div className="bg-gradient-to-br from-navy-900 to-navy-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden"><div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/10 rounded-full -mr-10 -mt-10 blur-2xl"></div><div className="relative z-10"><h3 className="font-bold text-gold-400 text-lg mb-1 uppercase tracking-wider text-xs">Total Earnings</h3><div className="text-5xl font-black mb-6 tracking-tight">${totalEarnings.toFixed(2)}</div><div className="flex gap-3"><button onClick={() => navigate('/payroll')} className="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl text-sm font-bold transition-all backdrop-blur-sm border border-white/10">View Details</button></div></div></div>
+                      {isReferralEnabled && <div className="bg-white rounded-3xl p-6 shadow-soft border border-slate-100 flex items-center justify-between hover:shadow-lg transition-all"><div><h3 className="font-bold text-navy-900 flex items-center mb-1"><UserPlus className="w-5 h-5 mr-2 text-gold-500" /> Refer a Pro</h3><p className="text-xs text-slate-500 max-w-[200px] leading-relaxed">Earn $50 for every skilled pro you bring to the crew.</p></div><button onClick={() => openReferralModal('PROVIDER')} className="p-4 bg-navy-50 text-navy-600 rounded-2xl hover:bg-navy-100 hover:text-navy-700 transition-colors shadow-sm" title="Share Referral Link"><Share2 className="w-5 h-5" /></button></div>}
                   </div>
               </div>
-
-              <div className="mt-16 pt-12 border-t border-slate-200">
-                  <div className="mb-8">
-                      <h2 className="text-2xl font-bold text-navy-900 mb-2 flex items-center">
-                          <Users className="w-6 h-6 mr-2 text-indigo-600" /> Staffing & Subcontracting
-                      </h2>
-                      <p className="text-slate-500">Need extra hands for a job? Post a gig to hire another pro. These expenses will be tracked in your Tax Center.</p>
-                  </div>
-                  {renderServiceGrid()}
-                  {renderMyRequests()}
-              </div>
-          </>
+          </div>
       )}
 
       {/* Request Modal */}

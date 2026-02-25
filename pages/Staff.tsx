@@ -6,7 +6,7 @@ import { Plus, Edit2, ShieldAlert, History, Check, X, ShieldCheck, Wrench, Exter
 import { ALL_SERVICE_CATEGORIES } from '../constants';
 
 export const Staff = () => {
-  const { users, addUser, updateUser } = useData();
+  const { users, addUser, updateUser, isVendorSignupEnabled, toggleVendorSignup } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -133,29 +133,44 @@ export const Staff = () => {
             <h1 className="text-3xl font-extrabold text-navy-900 tracking-tight">Approvals & User Management</h1>
             <p className="text-slate-500 mt-1">Manage Clients, Providers, and Admins</p>
         </div>
-        <div className="flex gap-3">
-            <div className="flex bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
+            {/* Master Toggle */}
+            <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gold-200 shadow-sm">
+                <span className="text-xs font-bold text-navy-900 uppercase tracking-wider pl-2">Public Pro Signup</span>
                 <button 
-                    onClick={() => setFilterType('ALL')}
-                    className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${filterType === 'ALL' ? 'bg-navy-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                    onClick={() => toggleVendorSignup(!isVendorSignupEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isVendorSignupEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
                 >
-                    ALL USERS
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isVendorSignupEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
+                <span className={`text-xs font-bold px-2 ${isVendorSignupEnabled ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    {isVendorSignupEnabled ? 'ENABLED' : 'DISABLED'}
+                </span>
+            </div>
+            <div className="flex gap-3">
+                <div className="flex bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+                    <button 
+                        onClick={() => setFilterType('ALL')}
+                        className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${filterType === 'ALL' ? 'bg-navy-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                        ALL USERS
+                    </button>
+                    <button 
+                        onClick={() => setFilterType('PENDING')}
+                        className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${filterType === 'PENDING' ? 'bg-navy-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                        PENDING 
+                        {pendingCount > 0 && <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px]">{pendingCount}</span>}
+                    </button>
+                </div>
                 <button 
-                    onClick={() => setFilterType('PENDING')}
-                    className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${filterType === 'PENDING' ? 'bg-navy-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                onClick={() => handleOpenModal()}
+                className="flex items-center px-5 py-2.5 bg-navy-600 text-white rounded-xl hover:bg-navy-700 transition-all shadow-md font-bold text-sm hover:-translate-y-0.5"
                 >
-                    PENDING 
-                    {pendingCount > 0 && <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px]">{pendingCount}</span>}
+                <Plus className="w-4 h-4 mr-2" />
+                Add User
                 </button>
             </div>
-            <button 
-            onClick={() => handleOpenModal()}
-            className="flex items-center px-5 py-2.5 bg-navy-600 text-white rounded-xl hover:bg-navy-700 transition-all shadow-md font-bold text-sm hover:-translate-y-0.5"
-            >
-            <Plus className="w-4 h-4 mr-2" />
-            Add User
-            </button>
         </div>
       </div>
 

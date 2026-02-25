@@ -5,7 +5,6 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Schedule } from './pages/Schedule';
 import { Staff } from './pages/Staff';
-import { Vendors } from './pages/Vendors';
 import { TimeClock } from './pages/TimeClock';
 import { Payroll } from './pages/Payroll';
 import { PublicJobBoard } from './pages/PublicJobBoard';
@@ -38,7 +37,6 @@ const App = () => {
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/sites" element={<Sites />} />
               <Route path="/staff" element={<Staff />} />
-              <Route path="/vendors" element={<Vendors />} />
               <Route path="/time-clock" element={<TimeClock />} />
               <Route path="/payroll" element={<Payroll />} />
               <Route path="/support" element={<Support />} />

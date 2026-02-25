@@ -6,21 +6,26 @@ import { addDays, setHours, subDays, addHours, subHours } from 'date-fns';
 export const APP_LOGO_URL = "https://placehold.co/600x200/1e3a8a/ffd01f?text=I+Got+A+Guy!&font=roboto";
 
 export const ALL_SERVICE_CATEGORIES: ServiceCategory[] = [
-    'LANDSCAPING', 'MOVING', 'CLEANING', 'HANDYMAN', 'PLUMBING', 'AUTO', 'CONSTRUCTION', 'COMPUTER', 'GENERAL_LABOR', 'JOBSITE_LABOR', 'POWER_WASHING'
+    'LANDSCAPING', 'MOVING', 'CLEANING', 'HANDYMAN', 'PLUMBING', 'AUTO', 'CONSTRUCTION', 'COMPUTER', 'GENERAL_LABOR', 'JOBSITE_LABOR', 'POWER_WASHING', 'SMART_HOME_INSTALL', 'PEST_CONTROL', 'WEB_APP_DEV', 'FURNITURE_ASSEMBLY', 'GUTTER_CLEANING'
 ];
 
 export const SERVICE_CATEGORIES = {
   COMPUTER:      { risk: 'LOW',    fee: 3.00 },
   CLEANING:      { risk: 'LOW',    fee: 3.00 },
+  WEB_APP_DEV:   { risk: 'LOW',    fee: 3.00 },
   LANDSCAPING:   { risk: 'MEDIUM', fee: 5.00 },
   HANDYMAN:      { risk: 'MEDIUM', fee: 5.00 },
   GENERAL_LABOR: { risk: 'MEDIUM', fee: 5.00 },
+  SMART_HOME_INSTALL: { risk: 'MEDIUM', fee: 5.00 },
+  FURNITURE_ASSEMBLY: { risk: 'MEDIUM', fee: 5.00 },
   MOVING:        { risk: 'HIGH',   fee: 12.00 },
   PLUMBING:      { risk: 'HIGH',   fee: 12.00 },
   CONSTRUCTION:  { risk: 'HIGH',   fee: 12.00 },
   AUTO:          { risk: 'HIGH',   fee: 12.00 },
   JOBSITE_LABOR: { risk: 'HIGH',   fee: 12.00 },
-  POWER_WASHING: { risk: 'HIGH',   fee: 12.00 }
+  POWER_WASHING: { risk: 'HIGH',   fee: 12.00 },
+  PEST_CONTROL:  { risk: 'HIGH',   fee: 12.00 },
+  GUTTER_CLEANING: { risk: 'HIGH', fee: 12.00 }
 };
 
 export const PLATFORM_COMMISSION = 0.15; // 15%
@@ -46,11 +51,16 @@ export const CATEGORY_RISK_MAPPING: Record<ServiceCategory, { risk: keyof typeof
   CONSTRUCTION: { risk: RISK_LEVELS.HIGH },
   JOBSITE_LABOR: { risk: RISK_LEVELS.HIGH }, 
   POWER_WASHING: { risk: RISK_LEVELS.HIGH }, // Corrected for 2026 liability
+  PEST_CONTROL: { risk: RISK_LEVELS.HIGH },
+  GUTTER_CLEANING: { risk: RISK_LEVELS.HIGH },
   HANDYMAN: { risk: RISK_LEVELS.MEDIUM },
   GENERAL_LABOR: { risk: RISK_LEVELS.MEDIUM },
   LANDSCAPING: { risk: RISK_LEVELS.MEDIUM },
+  SMART_HOME_INSTALL: { risk: RISK_LEVELS.MEDIUM },
+  FURNITURE_ASSEMBLY: { risk: RISK_LEVELS.MEDIUM },
   CLEANING: { risk: RISK_LEVELS.LOW },
-  COMPUTER: { risk: RISK_LEVELS.LOW }
+  COMPUTER: { risk: RISK_LEVELS.LOW },
+  WEB_APP_DEV: { risk: RISK_LEVELS.LOW }
 };
 
 

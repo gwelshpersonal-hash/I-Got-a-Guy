@@ -43,6 +43,9 @@ interface DataContextType {
   isReferralEnabled: boolean;
   toggleReferralProgram: (enabled: boolean) => void;
 
+  isVendorSignupEnabled: boolean;
+  toggleVendorSignup: (enabled: boolean) => void;
+
   // Messaging
   messages: Message[];
   sendMessage: (shiftId: string, senderId: string, content: string) => void;
@@ -66,6 +69,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 const STORAGE_KEY_SHIFTS = 'iw_shifts';
 const STORAGE_KEY_USERS = 'iw_users';
 const STORAGE_KEY_REF_ENABLED = 'iw_referral_enabled';
+const STORAGE_KEY_VENDOR_SIGNUP_ENABLED = 'iw_vendor_signup_enabled';
 const STORAGE_KEY_MESSAGES = 'iw_messages';
 const STORAGE_KEY_JOBS = 'iw_jobs';
 const STORAGE_KEY_CONFIG = 'iw_platform_config';
@@ -166,6 +170,31 @@ const SAMPLE_JOBS: Partial<Record<ServiceCategory, { desc: string, min: number, 
         { desc: "Weed garden beds and trim hedges", min: 100, max: 200 },
         { desc: "Leaf removal for large yard", min: 120, max: 250 },
         { desc: "Spread mulch (mulch provided)", min: 80, max: 160 }
+    ],
+    'SMART_HOME_INSTALL': [
+        { desc: "Install Ring doorbell and 2 cameras", min: 100, max: 200 },
+        { desc: "Set up smart thermostat", min: 80, max: 150 },
+        { desc: "Install smart locks on front and back doors", min: 120, max: 250 }
+    ],
+    'PEST_CONTROL': [
+        { desc: "Spray for ants and spiders", min: 80, max: 150 },
+        { desc: "Remove wasp nest from eaves", min: 100, max: 200 },
+        { desc: "Rodent inspection and trapping", min: 150, max: 300 }
+    ],
+    'WEB_APP_DEV': [
+        { desc: "Build simple landing page", min: 200, max: 500 },
+        { desc: "Fix bugs on existing React app", min: 150, max: 400 },
+        { desc: "Set up Shopify store", min: 300, max: 800 }
+    ],
+    'FURNITURE_ASSEMBLY': [
+        { desc: "Assemble large IKEA wardrobe", min: 80, max: 150 },
+        { desc: "Put together 6 dining chairs and table", min: 100, max: 200 },
+        { desc: "Assemble outdoor patio set", min: 75, max: 150 }
+    ],
+    'GUTTER_CLEANING': [
+        { desc: "Clean gutters on single-story home", min: 100, max: 150 },
+        { desc: "Clean gutters and install guards", min: 200, max: 400 },
+        { desc: "Repair sagging gutter section", min: 80, max: 150 }
     ]
 };
 
@@ -244,6 +273,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const toggleReferralProgram = (enabled: boolean) => {
       setIsReferralEnabled(enabled);
       localStorage.setItem(STORAGE_KEY_REF_ENABLED, JSON.stringify(enabled));
+  };
+
+  // Vendor Signup State
+  const [isVendorSignupEnabled, setIsVendorSignupEnabled] = useState<boolean>(() => {
+      const saved = localStorage.getItem(STORAGE_KEY_VENDOR_SIGNUP_ENABLED);
+      return saved !== null ? JSON.parse(saved) === true : true;
+  });
+
+  const toggleVendorSignup = (enabled: boolean) => {
+      setIsVendorSignupEnabled(enabled);
+      localStorage.setItem(STORAGE_KEY_VENDOR_SIGNUP_ENABLED, JSON.stringify(enabled));
   };
 
   // Messages State
@@ -496,6 +536,50 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const interval = setInterval(checkSilentRelease, 60000);
       return () => clearInterval(interval);
   }, [shifts]);
+
+  // --- Referral Payout Logic ---
+  useEffect(() => {
+      if (!isReferralEnabled) return;
+
+      const pendingReferrals = referrals.filter(r => r.status === 'PENDING');
+      if (pendingReferrals.length === 0) return;
+
+      let hasUpdates = false;
+      const updatedReferrals = referrals.map(ref => {
+          if (ref.status !== 'PENDING') return ref;
+
+          const referredUser = users.find(u => u.id === ref.referredUserId);
+          if (!referredUser) return ref;
+
+          // Count completed jobs for the referred user
+          const completedJobs = shifts.filter(s => 
+              (s.status === ShiftStatus.COMPLETED || s.status === ShiftStatus.VERIFIED) &&
+              (ref.programType === 'PRO_REFERRAL' ? s.userId === referredUser.id : s.clientId === referredUser.id)
+          );
+
+          if (completedJobs.length >= 3) {
+              hasUpdates = true;
+              
+              // Notify the referrer
+              addNotification({
+                  id: `ref_paid_${Date.now()}_${ref.id}`,
+                  targetUserId: ref.referrerUserId,
+                  type: 'SUCCESS',
+                  message: `Referral Bonus! ${referredUser.name} completed 3 jobs. $${ref.payoutAmount} will be added to your next payout.`,
+                  timestamp: new Date(),
+                  read: false
+              });
+
+              return { ...ref, status: 'APPROVED' as const };
+          }
+
+          return ref;
+      });
+
+      if (hasUpdates) {
+          setReferrals(updatedReferrals);
+      }
+  }, [shifts, referrals, isReferralEnabled, users]);
 
   // User Actions
   const addUser = (user: User) => setUsers(prev => [...prev, user]);
@@ -828,6 +912,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       jobs, addJob, updateJob, deleteJob, applications, submitApplication, updateApplication,
       referrals, addReferral, updateReferral,
       isReferralEnabled, toggleReferralProgram,
+      isVendorSignupEnabled, toggleVendorSignup,
       messages, sendMessage,
       platformConfig, updatePlatformConfig,
       legalDocuments, updateLegalDocument, faqs, addFaq, updateFaq, deleteFaq

@@ -26,7 +26,7 @@ export enum ShiftStatus {
 export type ShiftType = 'SCHEDULED' | 'URGENT';
 export type EscrowStatus = 'PENDING' | 'SECURED' | 'DISPUTED' | 'RELEASED' | 'REFUNDED' | 'PARTIAL_REFUND';
 
-export type ServiceCategory = 'LANDSCAPING' | 'MOVING' | 'CLEANING' | 'HANDYMAN' | 'PLUMBING' | 'AUTO' | 'CONSTRUCTION' | 'COMPUTER' | 'GENERAL_LABOR' | 'JOBSITE_LABOR' | 'POWER_WASHING';
+export type ServiceCategory = 'LANDSCAPING' | 'MOVING' | 'CLEANING' | 'HANDYMAN' | 'PLUMBING' | 'AUTO' | 'CONSTRUCTION' | 'COMPUTER' | 'GENERAL_LABOR' | 'JOBSITE_LABOR' | 'POWER_WASHING' | 'SMART_HOME_INSTALL' | 'PEST_CONTROL' | 'WEB_APP_DEV' | 'FURNITURE_ASSEMBLY' | 'GUTTER_CLEANING';
 
 export interface Organization {
   id: string;

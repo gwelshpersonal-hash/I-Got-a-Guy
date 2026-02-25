@@ -4,18 +4,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { User, Role, StaffType, ServiceCategory, Referral } from '../types';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, UserPlus, Home, Hammer, Gift, ShieldCheck, Upload, FileText, ChevronRight } from 'lucide-react';
+import { Loader2, UserPlus, Home, Hammer, Gift, ShieldCheck, Upload, FileText, ChevronRight, X } from 'lucide-react';
 import { APP_LOGO_URL, ALL_SERVICE_CATEGORIES } from '../constants';
 
 export const Signup = () => {
     const { login } = useAuth();
-    const { addUser, users, addReferral, isReferralEnabled } = useData();
+    const { addUser, users, addReferral, isReferralEnabled, isVendorSignupEnabled } = useData();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
     const [isLoading, setIsLoading] = useState(false);
     const [role, setRole] = useState<Role>(Role.CLIENT);
     const [referralCode, setReferralCode] = useState('');
+    const [showLegalModal, setShowLegalModal] = useState(false);
+    const [legalAccepted, setLegalAccepted] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -61,6 +63,12 @@ export const Signup = () => {
 
     const handleSignup = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (role === Role.CLIENT && !legalAccepted) {
+            setShowLegalModal(true);
+            return;
+        }
+
         setIsLoading(true);
 
         setTimeout(() => {
@@ -156,22 +164,24 @@ export const Signup = () => {
                 </div>
 
                 <div className="p-8 max-h-[70vh] overflow-y-auto">
-                    <div className="flex gap-2 mb-6 bg-slate-100 p-1 rounded-xl">
-                        <button 
-                            type="button"
-                            onClick={() => setRole(Role.CLIENT)}
-                            className={`flex-1 py-3 rounded-lg text-sm font-bold flex items-center justify-center transition-all ${role === Role.CLIENT ? 'bg-white text-navy-900 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            <Home className="w-4 h-4 mr-2" /> I Need a Guy
-                        </button>
-                        <button 
-                             type="button"
-                             onClick={() => setRole(Role.PROVIDER)}
-                             className={`flex-1 py-3 rounded-lg text-sm font-bold flex items-center justify-center transition-all ${role === Role.PROVIDER ? 'bg-white text-navy-900 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            <Hammer className="w-4 h-4 mr-2" /> I am a Guy
-                        </button>
-                    </div>
+                    {isVendorSignupEnabled && (
+                        <div className="flex gap-2 mb-6 bg-slate-100 p-1 rounded-xl">
+                            <button 
+                                type="button"
+                                onClick={() => setRole(Role.CLIENT)}
+                                className={`flex-1 py-3 rounded-lg text-sm font-bold flex items-center justify-center transition-all ${role === Role.CLIENT ? 'bg-white text-navy-900 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                <Home className="w-4 h-4 mr-2" /> I Need a Guy
+                            </button>
+                            <button 
+                                 type="button"
+                                 onClick={() => setRole(Role.PROVIDER)}
+                                 className={`flex-1 py-3 rounded-lg text-sm font-bold flex items-center justify-center transition-all ${role === Role.PROVIDER ? 'bg-white text-navy-900 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                <Hammer className="w-4 h-4 mr-2" /> I am a Guy
+                            </button>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSignup} className="space-y-4">
                         <div>
@@ -332,17 +342,17 @@ export const Signup = () => {
                                             )}
                                         </div>
 
-                                        {formData.insuranceType === 'OWN_COI' && (
+                                        {(formData.insuranceType === 'OWN_COI' || formData.skills.includes('PEST_CONTROL')) && (
                                             <div className="mt-2 animate-in slide-in-from-top-2">
                                                 <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-white transition-colors bg-slate-50/50">
                                                     {formData.coiFile ? (
                                                         <div className="flex items-center text-green-600 text-xs font-bold">
-                                                            <FileText className="w-4 h-4 mr-2" /> COI Uploaded
+                                                            <FileText className="w-4 h-4 mr-2" /> Document Uploaded
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-col items-center text-slate-400 text-xs">
                                                             <Upload className="w-4 h-4 mb-1" />
-                                                            <span>Upload Certificate (PDF/IMG)</span>
+                                                            <span>Upload {formData.skills.includes('PEST_CONTROL') ? 'State License (Required)' : 'Certificate (PDF/IMG)'}</span>
                                                         </div>
                                                     )}
                                                     <input type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
@@ -356,7 +366,7 @@ export const Signup = () => {
 
                         <button 
                             type="submit"
-                            disabled={isLoading || (role === Role.PROVIDER && formData.insuranceType === 'OWN_COI' && !formData.coiFile)}
+                            disabled={isLoading || (role === Role.PROVIDER && ((formData.insuranceType === 'OWN_COI' && !formData.coiFile) || (formData.skills.includes('PEST_CONTROL') && !formData.coiFile)))}
                             className="w-full py-4 bg-navy-900 hover:bg-navy-800 text-white text-lg font-bold rounded-xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? (
@@ -375,6 +385,100 @@ export const Signup = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Legal Modal */}
+            {showLegalModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-900/80 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                            <h2 className="text-xl font-bold text-navy-900 flex items-center">
+                                <ShieldCheck className="w-6 h-6 mr-2 text-gold-500" />
+                                Client Registration Agreement
+                            </h2>
+                            <button 
+                                onClick={() => setShowLegalModal(false)}
+                                className="text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 overflow-y-auto custom-scrollbar text-sm text-slate-600 space-y-4">
+                            <p className="font-bold text-red-600 uppercase tracking-wider text-xs">IMPORTANT: READ CAREFULLY BEFORE CONTINUING</p>
+                            <p className="font-bold text-navy-900">BY CREATING AN ACCOUNT AND USING THE "I GOT A GUY" APP, YOU EXPRESSLY AGREE TO THE FOLLOWING:</p>
+                            
+                            <div className="space-y-4 mt-4">
+                                <div>
+                                    <h3 className="font-bold text-navy-900 mb-1">NO AGENCY RELATIONSHIP:</h3>
+                                    <p>"I GOT A GUY" IS A TECHNOLOGY PLATFORM ONLY. WE ARE A "MIDDLEMAN" CONNECTING INDEPENDENT CONTRACTORS (PROS) WITH CLIENTS. WE DO NOT EMPLOY THE PROS, WE DO NOT DIRECT THEIR WORK, AND WE DO NOT GUARANTEE THE QUALITY, SAFETY, OR LEGALITY OF THE SERVICES PERFORMED.</p>
+                                </div>
+                                
+                                <div>
+                                    <h3 className="font-bold text-navy-900 mb-1">WAIVER OF JURY TRIAL:</h3>
+                                    <p>YOU AGREE THAT ANY DISPUTE, CLAIM, OR CONTROVERSY ARISING OUT OF YOUR USE OF THIS APP OR THE SERVICES PROVIDED BY A PRO SHALL BE SETTLED BY BINDING ARBITRATION IN DAUPHIN COUNTY, PENNSYLVANIA. YOU ARE VOLUNTARILY WAIVING YOUR CONSTITUTIONAL RIGHT TO A JURY TRIAL.</p>
+                                </div>
+                                
+                                <div>
+                                    <h3 className="font-bold text-navy-900 mb-1">LIMITATION OF LIABILITY:</h3>
+                                    <p>TO THE FULLEST EXTENT PERMITTED BY PENNSYLVANIA LAW, "I GOT A GUY" SHALL NOT BE LIABLE FOR ANY DAMAGES, INJURIES, OR LOSSES RESULTING FROM THE ACTIONS OR OMISSIONS OF A PRO.</p>
+                                </div>
+                                
+                                <div>
+                                    <h3 className="font-bold text-navy-900 mb-1">DAILY SHIELD PROGRAM:</h3>
+                                    <p>ANY PROTECTION PROVIDED UNDER THE "DAILY SHIELD" PROGRAM IS A LIMITED CONTRACTUAL INDEMNITY PROVIDED BY THE COMPANY AND IS NOT A CONTRACT OF INSURANCE.</p>
+                                </div>
+                                
+                                <div>
+                                    <h3 className="font-bold text-navy-900 mb-1">MARKETPLACE TAXES:</h3>
+                                    <p>AS A MARKETPLACE FACILITATOR, "I GOT A GUY" WILL COLLECT AND REMIT APPLICABLE PENNSYLVANIA SALES TAX ON SERVICE FEES AS REQUIRED BY LAW.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+                            <label className="flex items-start gap-3 cursor-pointer group mb-6">
+                                <div className="relative flex items-center justify-center mt-0.5">
+                                    <input 
+                                        type="checkbox" 
+                                        className="peer sr-only"
+                                        checked={legalAccepted}
+                                        onChange={(e) => setLegalAccepted(e.target.checked)}
+                                    />
+                                    <div className="w-5 h-5 border-2 border-slate-300 rounded peer-checked:bg-navy-600 peer-checked:border-navy-600 transition-colors flex items-center justify-center group-hover:border-navy-400">
+                                        <svg className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <span className="text-sm font-bold text-navy-900 select-none">
+                                    I HAVE READ THE ABOVE AND AGREE TO WAIVE MY RIGHT TO A JURY TRIAL AND PROCEED WITH REGISTRATION.
+                                </span>
+                            </label>
+
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setShowLegalModal(false)}
+                                    className="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={(e) => {
+                                        if (legalAccepted) {
+                                            setShowLegalModal(false);
+                                            handleSignup(e as any);
+                                        }
+                                    }}
+                                    disabled={!legalAccepted || isLoading}
+                                    className="flex-1 px-4 py-3 bg-navy-900 text-white font-bold rounded-xl hover:bg-navy-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                >
+                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm & Register'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
