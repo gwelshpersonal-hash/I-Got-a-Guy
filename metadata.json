@@ -1,6 +1,6 @@
 {
   "name": "I Got A Guy!",
-  "description": "The ultimate service connection app. Whatever you need, I know a guy! Manage crews, vendors, and shifts with a smile.",
+  "description": "The ultimate service connection app. Whatever you need, I got a guy! Manage crews, vendors, and shifts with a smile.",
   "requestFramePermissions": [
     "geolocation"
   ]
