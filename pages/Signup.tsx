@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
+import { supabase } from '../lib/supabase';
 import { User, Role, StaffType, ServiceCategory, Referral } from '../types';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, UserPlus, Home, Hammer, Gift, ShieldCheck, Upload, FileText, ChevronRight, X } from 'lucide-react';
@@ -61,7 +62,7 @@ export const Signup = () => {
         }
     };
 
-    const handleSignup = (e: React.FormEvent) => {
+    const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (role === Role.CLIENT && !legalAccepted) {
@@ -71,7 +72,7 @@ export const Signup = () => {
 
         setIsLoading(true);
 
-        setTimeout(() => {
+        try {
             const isProvider = role === Role.PROVIDER;
             
             // Determine Verification Status
@@ -87,7 +88,19 @@ export const Signup = () => {
                 }
             }
 
-            // 1. Create User
+            // 1. Check if user already exists
+            const { data: existingUsers } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', formData.email.trim());
+
+            if (existingUsers && existingUsers.length > 0) {
+                alert("A user with this email already exists. Please log in.");
+                setIsLoading(false);
+                return;
+            }
+
+            // 2. Create User
             const newUser: User = {
                 id: `user_${Date.now()}`,
                 orgId: 'org_1',
@@ -113,7 +126,7 @@ export const Signup = () => {
                 isCoiVerified: false 
             };
 
-            addUser(newUser);
+            await addUser(newUser);
 
             // 2. Handle Referral Logic (only if enabled)
             if (isReferralEnabled && referralCode) {
@@ -141,8 +154,12 @@ export const Signup = () => {
             // Login immediately regardless of status, Dashboard will handle restrictions
             login(newUser.id);
             navigate('/');
-            
-        }, 1000);
+        } catch (error) {
+            console.error("Signup error:", error);
+            alert("An error occurred during signup. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
