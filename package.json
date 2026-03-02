@@ -7,10 +7,12 @@
     "dev": "tsx server.ts",
     "start": "node server.ts",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "tsc"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "@supabase/supabase-js": "^2.98.0",
     "@types/express": "^5.0.6",
     "date-fns": "^4.1.0",
     "express": "^5.2.1",
