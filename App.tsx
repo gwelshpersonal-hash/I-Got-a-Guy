@@ -19,8 +19,14 @@ import { TaxCenter } from './pages/TaxCenter';
 import { ProviderStaffing } from './pages/ProviderStaffing';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import { isSupabaseConfigured } from './lib/supabase';
+import { SupabaseSetup } from './components/SupabaseSetup';
 
 const App = () => {
+  if (!isSupabaseConfigured) {
+    return <SupabaseSetup />;
+  }
+
   return (
     <DataProvider>
       <AuthProvider>
