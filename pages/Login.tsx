@@ -49,6 +49,16 @@ export const Login = () => {
         }, 800);
     };
 
+    const handleForgotPassword = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!email) {
+            setError('Please enter your email address first.');
+            return;
+        }
+        // In a real app, this would trigger a Supabase password reset email
+        alert(`Password reset link sent to ${email}`);
+    };
+
     return (
         <div className="min-h-screen bg-navy-950 flex items-center justify-center p-4 relative overflow-hidden font-sans">
             {/* Ambient Backgrounds */}
@@ -97,7 +107,13 @@ export const Login = () => {
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="block text-sm font-bold text-navy-900">Password</label>
-                                <a href="#" className="text-xs font-bold text-gold-600 hover:text-gold-500 transition-colors">Forgot Password?</a>
+                                <button 
+                                    type="button"
+                                    onClick={handleForgotPassword}
+                                    className="text-xs font-bold text-gold-600 hover:text-gold-500 transition-colors"
+                                >
+                                    Forgot Password?
+                                </button>
                             </div>
                             <input 
                                 type="password"
